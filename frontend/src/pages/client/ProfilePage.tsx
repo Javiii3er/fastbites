@@ -6,13 +6,13 @@ import type { User, Address } from '../../types';
 
 export default function ProfilePage() {
   const { setAuth, token } = useAuthStore();
-  const [user, setUser]       = useState<User | null>(null);
+  const [user, setUser]         = useState<User | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
-  const [editing, setEditing] = useState(false);
-  const [name, setName]       = useState('');
-  const [phone, setPhone]     = useState('');
-  const [saving, setSaving]   = useState(false);
-  const [success, setSuccess] = useState('');
+  const [editing, setEditing]   = useState(false);
+  const [name, setName]         = useState('');
+  const [phone, setPhone]       = useState('');
+  const [saving, setSaving]     = useState(false);
+  const [success, setSuccess]   = useState('');
 
   // ─── Formulario nueva dirección ───────────────────────
   const [showAddressForm, setShowAddressForm] = useState(false);
@@ -78,6 +78,13 @@ export default function ProfilePage() {
     }
   };
 
+  // Formatear teléfono para mostrar
+  const formatPhone = (p: string) => {
+    if (!p) return '—';
+    const clean = p.replace('+502', '').replace(/\s/g, '');
+    return `+502 ${clean}`;
+  };
+
   if (!user) return (
     <div className="text-center py-20 text-dark-500">Cargando perfil...</div>
   );
@@ -85,11 +92,17 @@ export default function ProfilePage() {
   return (
     <div className="max-w-lg mx-auto space-y-6 animate-slide-up">
       <div>
-        <p className="text-brand-500 text-sm font-semibold uppercase tracking-widest mb-2">
-          Cuenta
+      <button onClick={() => window.history.back()}
+     className="flex items-center gap-2 text-dark-400 hover:text-white
+               transition-colors text-sm font-medium group mb-4">
+        <span className="group-hover:-translate-x-1 transition-transform duration-200">←</span>
+        Volver
+      </button>
+       <p className="text-brand-500 text-sm font-semibold uppercase tracking-widest mb-2">
+       Cuenta
         </p>
-        <h1 className="font-display text-4xl text-white tracking-wide">MI PERFIL</h1>
-      </div>
+       <h1 className="font-display text-4xl text-white tracking-wide">MI PERFIL</h1>
+    </div>
 
       {success && (
         <div className="bg-green-500/10 border border-green-500/20 text-green-400
@@ -123,13 +136,29 @@ export default function ProfilePage() {
               <input value={name} onChange={(e) => setName(e.target.value)}
                 className="input" />
             </div>
+
             <div>
               <label className="block text-sm font-medium text-dark-300 mb-1.5">
                 Teléfono
               </label>
-              <input value={phone} onChange={(e) => setPhone(e.target.value)}
-                className="input" placeholder="50212345678" />
+              <div className="flex gap-2">
+                <div className="flex items-center px-3 bg-dark-700 border border-dark-600
+                                rounded-xl text-dark-300 text-sm font-medium shrink-0">
+                  +502
+                </div>
+                <input
+                  value={phone.replace('+502', '').replace(/\s/g, '')}
+                  onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                  className="input flex-1"
+                  placeholder="12345678"
+                  maxLength={8}
+                />
+              </div>
+              <p className="text-xs text-dark-500 mt-1">
+                Solo los 8 dígitos de tu número
+              </p>
             </div>
+
             <div className="flex gap-3">
               <button onClick={() => setEditing(false)} className="btn-secondary flex-1">
                 Cancelar
@@ -146,9 +175,17 @@ export default function ProfilePage() {
               <span className="text-dark-400">Email</span>
               <span className="font-medium text-white">{user.email}</span>
             </div>
-            <div className="flex justify-between text-sm">
+            <div className="flex justify-between text-sm border-b border-dark-700 pb-3">
               <span className="text-dark-400">Teléfono</span>
-              <span className="font-medium text-white">{user.phone ?? '—'}</span>
+              <span className="font-medium text-white">{formatPhone(user.phone ?? '')}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-dark-400">Rol</span>
+              <span className="font-medium text-white capitalize">
+                {user.role === 'CLIENT' ? 'Cliente'
+                  : user.role === 'ADMIN' ? 'Administrador'
+                  : 'Manager'}
+              </span>
             </div>
             <button onClick={() => setEditing(true)} className="btn-secondary w-full mt-2">
               Editar perfil

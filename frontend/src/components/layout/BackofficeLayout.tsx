@@ -5,19 +5,34 @@ import {
 } from 'lucide-react';
 import { useAuthStore } from '../../stores/authStore';
 
-const links = [
-  { to: '/admin/dashboard',   label: 'Dashboard',    icon: LayoutDashboard },
-  { to: '/admin/orders',      label: 'Pedidos',       icon: ShoppingBag },
-  { to: '/admin/products',    label: 'Productos',     icon: Package },
-  { to: '/admin/offers',      label: 'Ofertas',       icon: Tag },
-  { to: '/admin/restaurants', label: 'Restaurantes',  icon: Store },
-  { to: '/admin/users',       label: 'Usuarios',      icon: Users },
-  { to: '/admin/reports',     label: 'Reportería',    icon: BarChart2 },
+const adminLinks = [
+  { to: '/admin/dashboard',   label: 'Dashboard',   icon: LayoutDashboard },
+  { to: '/admin/orders',      label: 'Pedidos',      icon: ShoppingBag     },
+  { to: '/admin/products',    label: 'Productos',    icon: Package         },
+  { to: '/admin/offers',      label: 'Ofertas',      icon: Tag             },
+  { to: '/admin/restaurants', label: 'Restaurantes', icon: Store           },
+  { to: '/admin/users',       label: 'Usuarios',     icon: Users           },
+  { to: '/admin/reports',     label: 'Reportería',   icon: BarChart2       },
 ];
+
+const managerLinks = [
+  { to: '/admin/dashboard',   label: 'Dashboard',   icon: LayoutDashboard },
+  { to: '/admin/orders',      label: 'Pedidos',      icon: ShoppingBag     },
+  { to: '/admin/products',    label: 'Productos',    icon: Package         },
+  { to: '/admin/offers',      label: 'Ofertas',      icon: Tag             },
+  { to: '/admin/reports',     label: 'Reportería',   icon: BarChart2       },
+];
+
+const ROL_LABELS: Record<string, string> = {
+  ADMIN:   'Administrador',
+  MANAGER: 'Manager',
+  CLIENT:  'Cliente',
+};
 
 export default function BackofficeLayout() {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
+  const links = user?.role === 'ADMIN' ? adminLinks : managerLinks;
 
   return (
     <div className="flex h-screen bg-dark-950 overflow-hidden">
@@ -25,7 +40,7 @@ export default function BackofficeLayout() {
       {/* Sidebar */}
       <aside className="w-64 bg-dark-900 border-r border-dark-700 flex flex-col shrink-0">
 
-        {/* Logo — hace clic y vuelve al sitio */}
+        {/* Logo */}
         <div className="px-5 py-5 border-b border-dark-700">
           <Link to="/" className="flex items-center gap-2 group w-fit">
             <div className="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center
@@ -57,10 +72,8 @@ export default function BackofficeLayout() {
           ))}
         </nav>
 
-        {/* Volver al sitio + usuario */}
+        {/* Footer sidebar */}
         <div className="px-3 py-4 border-t border-dark-700 space-y-1">
-
-          {/* Botón volver al sitio cliente */}
           <Link to="/"
             className="flex items-center gap-2 w-full px-3 py-2.5 rounded-xl text-sm
                        font-medium text-dark-400 hover:bg-dark-800 hover:text-white transition-all">
@@ -68,7 +81,6 @@ export default function BackofficeLayout() {
             Ir al sitio
           </Link>
 
-          {/* Info usuario */}
           <div className="flex items-center gap-3 px-3 py-2">
             <div className="w-8 h-8 bg-brand-500/15 border border-brand-500/20 rounded-lg
                             flex items-center justify-center shrink-0">
@@ -78,11 +90,12 @@ export default function BackofficeLayout() {
             </div>
             <div className="overflow-hidden">
               <p className="text-white text-sm font-medium truncate">{user?.name}</p>
-              <span className="text-xs text-brand-500">{user?.role}</span>
+              <span className="text-xs text-brand-500">
+                {ROL_LABELS[user?.role ?? ''] ?? user?.role}
+              </span>
             </div>
           </div>
 
-          {/* Cerrar sesión */}
           <button
             onClick={() => { logout(); navigate('/login'); }}
             className="flex items-center gap-2 w-full px-3 py-2.5 rounded-xl text-sm
