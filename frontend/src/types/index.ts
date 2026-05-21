@@ -55,8 +55,22 @@ export interface Product {
   drinks: Drink[];
 }
 
+// ─── Addresses ────────────────────────────────────────────────────────────────
+export interface Address {
+  id: number;
+  alias: string;
+  street: string;
+  city: string;
+  latitude: number;
+  longitude: number;
+  isDefault: boolean;
+}
+
 // ─── Orders ───────────────────────────────────────────────────────────────────
-export type OrderStatus = 'PENDING' | 'CONFIRMED' | 'PREPARING' | 'READY' | 'DELIVERED' | 'CANCELLED';
+export type OrderStatus =
+  | 'PENDING' | 'CONFIRMED' | 'PREPARING'
+  | 'READY'   | 'DELIVERED' | 'CANCELLED';
+
 export type PaymentMethod = 'CARD' | 'CASH';
 
 export interface CartItem {
@@ -76,8 +90,10 @@ export interface Order {
   subtotal: number;
   discount: number;
   total: number;
+  notes?: string;
   createdAt: string;
   restaurant: { name: string };
+  address?: Address;
   items: OrderItem[];
 }
 

@@ -64,4 +64,46 @@ userRouter.patch('/:id/toggle', authenticate, authorize('ADMIN'), async (req, re
   } catch (err) { next(err); }
 });
 
+// Reset contraseña (solo admin)
+userRouter.patch('/:id/reset-password', authenticate, authorize('ADMIN'), async (req, res, next) => {
+  try {
+    const { password } = req.body;
+    if (!password || password.length < 8) {
+      res.status(400).json({ success: false, message: 'Contraseña debe tener al menos 8 caracteres' });
+      return;
+    }
+    const bcrypt = await import('bcryptjs');
+    const hashed = await bcrypt.hash(password, 10);
+    const user = await prisma.user.update({
+      where: { id: parseInt(req.params.id) },
+      data: { password: hashed },
+      select: { id: true, name: true, email: true },
+    });
+    sendSuccess(res, user, 'Contraseña actualizada correctamente');
+  } catch (err) { next(err); }
+});
+
+// Admin — crear usuario con rol específico
+userRouter.post('/create', authenticate, authorize('ADMIN'), async (req, res, next) => {
+  try {
+    const { name, email, password, phone, role } = req.body;
+    if (!name || !email || !password) {
+      res.status(400).json({ success: false, message: 'Nombre, email y contraseña son requeridos' });
+      return;
+    }
+    const bcrypt = await import('bcryptjs');
+    const hashed = await bcrypt.hash(password, 10);
+    const exists = await prisma.user.findUnique({ where: { email } });
+    if (exists) {
+      res.status(409).json({ success: false, message: 'Ya existe un usuario con ese email' });
+      return;
+    }
+    const user = await prisma.user.create({
+      data: { name, email, password: hashed, phone: phone || null, role: role || 'CLIENT' },
+      select: { id: true, name: true, email: true, role: true },
+    });
+    sendSuccess(res, user, 'Usuario creado correctamente', 201);
+  } catch (err) { next(err); }
+});
+
 export { userRouter as default };

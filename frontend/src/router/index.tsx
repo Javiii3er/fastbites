@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
 import { useAuthStore } from '../stores/authStore';
+import NotFoundPage from '../pages/NotFoundPage';
 
 // Layouts
 import ClientLayout from '../components/layout/ClientLayout';
@@ -43,60 +44,62 @@ const GuestOnly = () => {
 };
 
 // ─── Router ───────────────────────────────────────────────────────────────────
-export const router = createBrowserRouter([
-  // ── Auth (solo para no autenticados)
-  {
-    element: <GuestOnly />,
-    children: [
-      { path: '/login', element: <LoginPage /> },
-      { path: '/register', element: <RegisterPage /> },
-      { path: '/forgot-password', element: <ForgotPasswordPage /> },
-    ],
-  },
+export const router = createBrowserRouter(
+  [
+    // ── Auth (solo para no autenticados)
+    {
+      element: <GuestOnly />,
+      children: [
+        { path: '/login',            element: <LoginPage />          },
+        { path: '/register',         element: <RegisterPage />       },
+        { path: '/forgot-password',  element: <ForgotPasswordPage /> },
+      ],
+    },
 
-  // ── Sistema Cliente
-  {
-    element: <ClientLayout />,
-    children: [
-      { path: '/', element: <HomePage /> },
-      { path: '/products', element: <ProductsPage /> },
-      { path: '/products/:id', element: <ProductDetailPage /> },
-      { path: '/offers', element: <OffersPage /> },
+    // ── Sistema Cliente
+    {
+      element: <ClientLayout />,
+      children: [
+        { path: '/',              element: <HomePage />          },
+        { path: '/products',      element: <ProductsPage />      },
+        { path: '/products/:id',  element: <ProductDetailPage /> },
+        { path: '/offers',        element: <OffersPage />        },
 
-      // Requiere login de cliente
-      {
-        element: <RequireAuth roles={['CLIENT', 'ADMIN', 'MANAGER']} />,
-        children: [
-          { path: '/cart', element: <CartPage /> },
-          { path: '/checkout', element: <CheckoutPage /> },
-          { path: '/orders', element: <OrdersPage /> },
-          { path: '/profile', element: <ProfilePage /> },
-        ],
-      },
-    ],
-  },
+        // Requiere login
+        {
+          element: <RequireAuth roles={['CLIENT', 'ADMIN', 'MANAGER']} />,
+          children: [
+            { path: '/cart',      element: <CartPage />     },
+            { path: '/checkout',  element: <CheckoutPage /> },
+            { path: '/orders',    element: <OrdersPage />   },
+            { path: '/profile',   element: <ProfilePage />  },
+          ],
+        },
+      ],
+    },
 
-  // ── Backoffice (solo ADMIN / MANAGER)
-  {
-    path: '/admin',
-    element: <RequireAuth roles={['ADMIN', 'MANAGER']} />,
-    children: [
-      {
-        element: <BackofficeLayout />,
-        children: [
-          { index: true, element: <Navigate to="/admin/dashboard" replace /> },
-          { path: 'dashboard', element: <DashboardPage /> },
-          { path: 'products', element: <BOProductsPage /> },
-          { path: 'orders', element: <BOOrdersPage /> },
-          { path: 'offers', element: <BOOffersPage /> },
-          { path: 'restaurants', element: <BORestaurantsPage /> },
-          { path: 'users', element: <BOUsersPage /> },
-          { path: 'reports', element: <BOReportsPage /> },
-        ],
-      },
-    ],
-  },
+    // ── Backoffice (solo ADMIN / MANAGER)
+    {
+      path: '/admin',
+      element: <RequireAuth roles={['ADMIN', 'MANAGER']} />,
+      children: [
+        {
+          element: <BackofficeLayout />,
+          children: [
+            { index: true,          element: <Navigate to="/admin/dashboard" replace /> },
+            { path: 'dashboard',    element: <DashboardPage />    },
+            { path: 'products',     element: <BOProductsPage />   },
+            { path: 'orders',       element: <BOOrdersPage />     },
+            { path: 'offers',       element: <BOOffersPage />     },
+            { path: 'restaurants',  element: <BORestaurantsPage /> },
+            { path: 'users',        element: <BOUsersPage />      },
+            { path: 'reports',      element: <BOReportsPage />    },
+          ],
+        },
+      ],
+    },
 
-  // ── Catch-all
-  { path: '*', element: <Navigate to="/" replace /> },
-]);
+    // ── Catch-all
+    { path: '*', element: <NotFoundPage /> },
+  ],
+);
