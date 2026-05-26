@@ -70,6 +70,14 @@ export default function LoginPage() {
       <div className="flex-1 flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-md animate-slide-up">
 
+          {/* Botón volver */}
+          <button onClick={() => navigate(-1)}
+            className="flex items-center gap-2 text-dark-400 hover:text-white
+                       transition-colors text-sm font-medium group mb-8">
+            <span className="group-hover:-translate-x-1 transition-transform duration-200">←</span>
+            Volver
+          </button>
+
           {/* Logo mobile */}
           <div className="lg:hidden flex items-center gap-2 mb-8">
             <div className="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center">

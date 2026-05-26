@@ -52,12 +52,13 @@ export default function Navbar() {
 
           {/* Actions */}
           <div className="flex items-center gap-2">
-            {/* Cart */}
-            <Link to="/cart"
+
+            {/* Carrito — si no está logueado lleva al login */}
+            <Link to={isAuthenticated ? '/cart' : '/login'}
               className="relative p-2.5 text-dark-300 hover:text-white
                          hover:bg-dark-800 rounded-xl transition-all duration-200">
               <ShoppingCart size={20} />
-              {itemCount > 0 && (
+              {itemCount > 0 && isAuthenticated && (
                 <span className="absolute -top-0.5 -right-0.5 bg-brand-500 text-white
                                  text-[10px] font-bold min-w-[18px] min-h-[18px] rounded-full
                                  flex items-center justify-center shadow-glow">
@@ -101,6 +102,7 @@ export default function Navbar() {
                     {user?.name.split(' ')[0]}
                   </span>
                 </Link>
+
                 <button onClick={handleLogout}
                   className="hidden md:flex p-2.5 text-dark-500 hover:text-brand-400
                              hover:bg-dark-800 rounded-xl transition-all">
@@ -109,12 +111,16 @@ export default function Navbar() {
               </>
             ) : (
               <div className="hidden md:flex items-center gap-2">
-                <Link to="/login" className="btn-ghost text-sm py-2 px-4">Ingresar</Link>
-                <Link to="/register" className="btn-primary text-sm py-2 px-5">Registrarse</Link>
+                <Link to="/login" className="btn-ghost text-sm py-2 px-4">
+                  Ingresar
+                </Link>
+                <Link to="/register" className="btn-primary text-sm py-2 px-5">
+                  Registrarse
+                </Link>
               </div>
             )}
 
-          {/* Mobile hamburger */}
+            {/* Mobile hamburger */}
             <button
               className="md:hidden p-2.5 text-dark-300 hover:text-white
                          hover:bg-dark-800 rounded-xl transition-all"
@@ -165,9 +171,13 @@ export default function Navbar() {
             ) : (
               <div className="flex flex-col gap-2 pt-1">
                 <Link to="/login" onClick={() => setMenuOpen(false)}
-                  className="btn-secondary text-sm text-center">Ingresar</Link>
+                  className="btn-secondary text-sm text-center">
+                  Ingresar
+                </Link>
                 <Link to="/register" onClick={() => setMenuOpen(false)}
-                  className="btn-primary text-sm text-center">Registrarse</Link>
+                  className="btn-primary text-sm text-center">
+                  Registrarse
+                </Link>
               </div>
             )}
           </div>

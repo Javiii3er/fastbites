@@ -1,23 +1,24 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Plus, Minus } from 'lucide-react';
+import { ShoppingCart, Plus, Minus, LogIn } from 'lucide-react';
 import { productApi } from '../../services/api';
 import { useCartStore } from '../../stores/cartStore';
+import { useAuthStore } from '../../stores/authStore';
 import type { Product } from '../../types';
 
 const getCategoryEmoji = (name?: string) => {
   switch (name) {
-    case 'Hamburguesas':  return '🍔';
-    case 'Pizzas':        return '🍕';
-    case 'Desayunos':     return '🥐';
-    case 'Pollo':         return '🍗';
-    case 'Tacos y Wraps': return '🌮';
-    case 'Papas y Snacks':return '🍟';
-    case 'Ensaladas':     return '🥗';
-    case 'Hot Dogs':      return '🌭';
-    case 'Postres':       return '🍰';
-    case 'Bebidas':       return '🥤';
-    default:              return '🍽️';
+    case 'Hamburguesas':   return '🍔';
+    case 'Pizzas':         return '🍕';
+    case 'Desayunos':      return '🥐';
+    case 'Pollo':          return '🍗';
+    case 'Tacos y Wraps':  return '🌮';
+    case 'Papas y Snacks': return '🍟';
+    case 'Ensaladas':      return '🥗';
+    case 'Hot Dogs':       return '🌭';
+    case 'Postres':        return '🍰';
+    case 'Bebidas':        return '🥤';
+    default:               return '🍽️';
   }
 };
 
@@ -25,14 +26,15 @@ export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const addItem = useCartStore((s) => s.addItem);
+  const { isAuthenticated } = useAuthStore();
 
-  const [product, setProduct]                 = useState<Product | null>(null);
-  const [loading, setLoading]                 = useState(true);
-  const [selectedSizeId, setSelectedSizeId]   = useState<number | undefined>();
-  const [selectedDrinkId, setSelectedDrinkId] = useState<number | undefined>();
+  const [product, setProduct]                   = useState<Product | null>(null);
+  const [loading, setLoading]                   = useState(true);
+  const [selectedSizeId, setSelectedSizeId]     = useState<number | undefined>();
+  const [selectedDrinkId, setSelectedDrinkId]   = useState<number | undefined>();
   const [selectedAddonIds, setSelectedAddonIds] = useState<number[]>([]);
-  const [quantity, setQuantity]               = useState(1);
-  const [notes, setNotes]                     = useState('');
+  const [quantity, setQuantity]                 = useState(1);
+  const [notes, setNotes]                       = useState('');
 
   useEffect(() => {
     productApi.getById(Number(id)).then((r) => {
@@ -57,6 +59,10 @@ export default function ProductDetailPage() {
   const unitPrice = Number(product.basePrice) + Number(sizeExtra) + Number(drinkExtra) + addonsTotal;
 
   const handleAddToCart = () => {
+    if (!isAuthenticated) {
+      navigate('/login');
+      return;
+    }
     addItem({
       product, sizeId: selectedSizeId, drinkId: selectedDrinkId,
       addonIds: selectedAddonIds, quantity, notes: notes || undefined, unitPrice,
@@ -93,7 +99,6 @@ export default function ProductDetailPage() {
           ) : (
             <span>{getCategoryEmoji(product.category?.name)}</span>
           )}
-          {/* Overlay gradiente */}
           <div className="absolute inset-0 bg-gradient-to-t from-dark-900/40 to-transparent
                           pointer-events-none" />
         </div>
@@ -200,23 +205,65 @@ export default function ProductDetailPage() {
 
           {/* Cantidad + botón */}
           <div className="flex items-center gap-4 pt-2">
-            <div className="flex items-center gap-3 bg-dark-700 rounded-xl px-4 py-2.5">
-              <button onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                className="text-dark-300 hover:text-white transition-colors">
-                <Minus size={18} />
-              </button>
-              <span className="font-bold text-white w-6 text-center">{quantity}</span>
-              <button onClick={() => setQuantity(quantity + 1)}
-                className="text-dark-300 hover:text-white transition-colors">
-                <Plus size={18} />
-              </button>
-            </div>
+            {/* Contador — solo visible si está logueado */}
+            {isAuthenticated && (
+              <div className="flex items-center gap-3 bg-dark-700 rounded-xl px-4 py-2.5">
+                <button onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  className="text-dark-300 hover:text-white transition-colors">
+                  <Minus size={18} />
+                </button>
+                <span className="font-bold text-white w-6 text-center">{quantity}</span>
+                <button onClick={() => setQuantity(quantity + 1)}
+                  className="text-dark-300 hover:text-white transition-colors">
+                  <Plus size={18} />
+                </button>
+              </div>
+            )}
+
+            {/* Botón principal */}
             <button onClick={handleAddToCart}
-              className="btn-primary flex-1 flex items-center justify-center gap-2 py-3">
-              <ShoppingCart size={18} />
-              Agregar — Q{(unitPrice * quantity).toFixed(2)}
+              className={`flex-1 flex items-center justify-center gap-2 py-3
+                          font-semibold rounded-xl transition-all text-sm ${
+                isAuthenticated
+                  ? 'btn-primary'
+                  : 'bg-dark-700 border border-brand-500/40 text-brand-400 hover:bg-brand-500 hover:text-white'
+              }`}>
+              {isAuthenticated ? (
+                <>
+                  <ShoppingCart size={18} />
+                  Agregar — Q{(unitPrice * quantity).toFixed(2)}
+                </>
+              ) : (
+                <>
+                  <LogIn size={18} />
+                  Inicia sesión para pedir
+                </>
+              )}
             </button>
           </div>
+
+          {/* Mensaje informativo si no está logueado */}
+          {!isAuthenticated && (
+            <div className="bg-dark-700 border border-dark-600 rounded-xl px-4 py-3
+                            flex items-center justify-between">
+              <p className="text-dark-400 text-sm">
+                ¿Ya tienes cuenta?
+              </p>
+              <div className="flex gap-2">
+                <button onClick={() => navigate('/login')}
+                  className="text-sm font-semibold text-brand-400 hover:text-brand-300
+                             transition-colors">
+                  Ingresar
+                </button>
+                <span className="text-dark-600">·</span>
+                <button onClick={() => navigate('/register')}
+                  className="text-sm font-semibold text-white hover:text-brand-400
+                             transition-colors">
+                  Registrarse
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

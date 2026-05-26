@@ -26,7 +26,7 @@ type FormData = z.infer<typeof schema>;
 export default function RegisterPage() {
   const { setAuth } = useAuthStore();
   const navigate = useNavigate();
-  const [error, setError]           = useState('');
+  const [error, setError]               = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm]   = useState(false);
 
@@ -60,9 +60,18 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-dark-900 px-4 py-12">
       <div className="w-full max-w-md animate-slide-up">
 
+        {/* Botón volver */}
+        <button onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-dark-400 hover:text-white
+                     transition-colors text-sm font-medium group mb-6">
+          <span className="group-hover:-translate-x-1 transition-transform duration-200">←</span>
+          Volver
+        </button>
+
         {/* Logo */}
         <div className="flex items-center justify-center gap-2 mb-8">
-          <div className="w-10 h-10 bg-brand-500 rounded-xl flex items-center justify-center shadow-glow">
+          <div className="w-10 h-10 bg-brand-500 rounded-xl flex items-center
+                          justify-center shadow-glow">
             <span className="text-white font-bold text-lg font-display">F</span>
           </div>
           <span className="font-display text-3xl text-white tracking-wider">
@@ -114,9 +123,7 @@ export default function RegisterPage() {
                   placeholder="••••••••"
                   className="input pr-10"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
+                <button type="button" onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-500
                              hover:text-dark-300 transition-colors">
                   {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -139,9 +146,7 @@ export default function RegisterPage() {
                   placeholder="••••••••"
                   className="input pr-10"
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirm(!showConfirm)}
+                <button type="button" onClick={() => setShowConfirm(!showConfirm)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-500
                              hover:text-dark-300 transition-colors">
                   {showConfirm ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -152,7 +157,8 @@ export default function RegisterPage() {
               )}
             </div>
 
-            <button type="submit" disabled={isSubmitting} className="btn-primary w-full py-3 mt-2">
+            <button type="submit" disabled={isSubmitting}
+              className="btn-primary w-full py-3 mt-2">
               {isSubmitting ? 'Creando cuenta...' : 'Crear cuenta'}
             </button>
           </form>
