@@ -69,9 +69,10 @@ export const offerApi = {
 
 // ─── Restaurants ──────────────────────────────────────────────────────────────
 export const restaurantApi = {
-  getAll: () => api.get<ApiResponse<Restaurant[]>>('/restaurants'),
-  create: (data: Partial<Restaurant>) => api.post('/restaurants', data),
-  update: (id: number, data: Partial<Restaurant>) => api.put(`/restaurants/${id}`, data),
+  getAll:          ()                          => api.get<ApiResponse<Restaurant[]>>('/restaurants'),
+  create:          (data: Partial<Restaurant>) => api.post('/restaurants', data),
+  update:          (id: number, data: Partial<Restaurant>) => api.put(`/restaurants/${id}`, data),
+  updateDayParts:  (id: number, dayParts: any[]) => api.put(`/restaurants/${id}/dayparts`, { dayParts }),
 };
 
 // ─── Reports ──────────────────────────────────────────────────────────────────
@@ -83,12 +84,16 @@ export const reportApi = {
 
 // ─── Users ────────────────────────────────────────────────────────────────────
 export const userApi = {
-  getAll:           ()                  => api.get<ApiResponse<User[]>>('/users'),
-  toggle:           (id: number)        => api.patch(`/users/${id}/toggle`),
-  getProfile:       ()                  => api.get<ApiResponse<User>>('/users/profile'),
-  updateProfile:    (data: Partial<User>) => api.put('/users/profile', data),
-  getAddresses:     ()                  => api.get('/users/addresses'),
-  addAddress:       (data: unknown)     => api.post('/users/addresses', data),
-  deleteAddress:    (id: number)        => api.delete(`/users/addresses/${id}`),
-  setDefaultAddress:(id: number)        => api.patch(`/users/addresses/${id}/default`),
+  getAll:              ()                  => api.get<ApiResponse<User[]>>('/users'),
+  toggle:              (id: number)        => api.patch(`/users/${id}/toggle`),
+  getProfile:          ()                  => api.get<ApiResponse<User>>('/users/profile'),
+  updateProfile:       (data: Partial<User>) => api.put('/users/profile', data),
+  getAddresses:        ()                  => api.get('/users/addresses'),
+  addAddress:          (data: unknown)     => api.post('/users/addresses', data),
+  deleteAddress:       (id: number)        => api.delete(`/users/addresses/${id}`),
+  setDefaultAddress:   (id: number)        => api.patch(`/users/addresses/${id}/default`),
+  getPaymentMethods:   ()                  => api.get('/users/payment-methods'),
+  addPaymentMethod:    (data: unknown)     => api.post('/users/payment-methods', data),
+  deletePaymentMethod: (id: number)        => api.delete(`/users/payment-methods/${id}`),
+  setDefaultPayment:   (id: number)        => api.patch(`/users/payment-methods/${id}/default`),
 };

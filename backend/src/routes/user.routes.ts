@@ -49,7 +49,6 @@ userRouter.post('/addresses', authenticate, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// Eliminar dirección
 userRouter.delete('/addresses/:id', authenticate, async (req, res, next) => {
   try {
     await prisma.address.deleteMany({
@@ -59,7 +58,6 @@ userRouter.delete('/addresses/:id', authenticate, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// Marcar dirección como principal
 userRouter.patch('/addresses/:id/default', authenticate, async (req, res, next) => {
   try {
     await prisma.address.updateMany({
@@ -74,7 +72,60 @@ userRouter.patch('/addresses/:id/default', authenticate, async (req, res, next) 
   } catch (err) { next(err); }
 });
 
-// Admin — listar todos los usuarios
+// ─── Métodos de pago ──────────────────────────────────────────────────────────
+userRouter.get('/payment-methods', authenticate, async (req, res, next) => {
+  try {
+    const methods = await prisma.paymentMethod_.findMany({
+      where: { userId: req.user!.userId },
+      orderBy: { isDefault: 'desc' },
+    });
+    sendSuccess(res, methods);
+  } catch (err) { next(err); }
+});
+
+userRouter.post('/payment-methods', authenticate, async (req, res, next) => {
+  try {
+    const { alias, lastFour, brand } = req.body;
+    if (!alias || !lastFour || !brand) {
+      res.status(400).json({ success: false, message: 'Alias, últimos 4 dígitos y marca son requeridos' });
+      return;
+    }
+    if (lastFour.length !== 4 || !/^\d+$/.test(lastFour)) {
+      res.status(400).json({ success: false, message: 'Los últimos 4 dígitos deben ser exactamente 4 números' });
+      return;
+    }
+    const count = await prisma.paymentMethod_.count({ where: { userId: req.user!.userId } });
+    const method = await prisma.paymentMethod_.create({
+      data: { alias, lastFour, brand, userId: req.user!.userId, isDefault: count === 0 }
+    });
+    sendSuccess(res, method, 'Método de pago agregado', 201);
+  } catch (err) { next(err); }
+});
+
+userRouter.delete('/payment-methods/:id', authenticate, async (req, res, next) => {
+  try {
+    await prisma.paymentMethod_.deleteMany({
+      where: { id: parseInt(req.params.id), userId: req.user!.userId }
+    });
+    sendSuccess(res, null, 'Método de pago eliminado');
+  } catch (err) { next(err); }
+});
+
+userRouter.patch('/payment-methods/:id/default', authenticate, async (req, res, next) => {
+  try {
+    await prisma.paymentMethod_.updateMany({
+      where: { userId: req.user!.userId },
+      data: { isDefault: false }
+    });
+    const method = await prisma.paymentMethod_.update({
+      where: { id: parseInt(req.params.id) },
+      data: { isDefault: true }
+    });
+    sendSuccess(res, method, 'Método de pago principal actualizado');
+  } catch (err) { next(err); }
+});
+
+// ─── Admin ────────────────────────────────────────────────────────────────────
 userRouter.get('/', authenticate, authorize('ADMIN'), async (req, res, next) => {
   try {
     const users = await prisma.user.findMany({
@@ -94,7 +145,6 @@ userRouter.patch('/:id/toggle', authenticate, authorize('ADMIN'), async (req, re
   } catch (err) { next(err); }
 });
 
-// Reset contraseña (solo admin)
 userRouter.patch('/:id/reset-password', authenticate, authorize('ADMIN'), async (req, res, next) => {
   try {
     const { password } = req.body;
@@ -113,7 +163,6 @@ userRouter.patch('/:id/reset-password', authenticate, authorize('ADMIN'), async 
   } catch (err) { next(err); }
 });
 
-// Admin — crear usuario con rol específico
 userRouter.post('/create', authenticate, authorize('ADMIN'), async (req, res, next) => {
   try {
     const { name, email, password, phone, role } = req.body;
