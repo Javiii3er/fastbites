@@ -1,18 +1,18 @@
 import { useEffect, useState } from 'react';
-import { MapPin, Plus, X, Star } from 'lucide-react';
+import { MapPin, Plus, X, Star, Trash2 } from 'lucide-react';
 import { userApi } from '../../services/api';
 import { useAuthStore } from '../../stores/authStore';
 import type { User, Address } from '../../types';
 
 export default function ProfilePage() {
   const { setAuth, token } = useAuthStore();
-  const [user, setUser]         = useState<User | null>(null);
+  const [user, setUser]           = useState<User | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
-  const [editing, setEditing]   = useState(false);
-  const [name, setName]         = useState('');
-  const [phone, setPhone]       = useState('');
-  const [saving, setSaving]     = useState(false);
-  const [success, setSuccess]   = useState('');
+  const [editing, setEditing]     = useState(false);
+  const [name, setName]           = useState('');
+  const [phone, setPhone]         = useState('');
+  const [saving, setSaving]       = useState(false);
+  const [success, setSuccess]     = useState('');
 
   // ─── Formulario nueva dirección ───────────────────────
   const [showAddressForm, setShowAddressForm] = useState(false);
@@ -21,6 +21,7 @@ export default function ProfilePage() {
   const [addrCity, setAddrCity]     = useState('');
   const [addrError, setAddrError]   = useState('');
   const [addrSaving, setAddrSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const loadAddresses = () =>
     userApi.getAddresses().then((r) => setAddresses(r.data.data));
@@ -78,7 +79,27 @@ export default function ProfilePage() {
     }
   };
 
-  // Formatear teléfono para mostrar
+  const handleDeleteAddress = async (id: number) => {
+    setDeletingId(id);
+    try {
+      await userApi.deleteAddress(id);
+      loadAddresses();
+      setSuccess('Dirección eliminada');
+      setTimeout(() => setSuccess(''), 3000);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const handleSetDefault = async (id: number) => {
+    try {
+      await userApi.setDefaultAddress(id);
+      loadAddresses();
+      setSuccess('Dirección principal actualizada');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch {}
+  };
+
   const formatPhone = (p: string) => {
     if (!p) return '—';
     const clean = p.replace('+502', '').replace(/\s/g, '');
@@ -92,17 +113,17 @@ export default function ProfilePage() {
   return (
     <div className="max-w-lg mx-auto space-y-6 animate-slide-up">
       <div>
-      <button onClick={() => window.history.back()}
-     className="flex items-center gap-2 text-dark-400 hover:text-white
-               transition-colors text-sm font-medium group mb-4">
-        <span className="group-hover:-translate-x-1 transition-transform duration-200">←</span>
-        Volver
-      </button>
-       <p className="text-brand-500 text-sm font-semibold uppercase tracking-widest mb-2">
-       Cuenta
+        <button onClick={() => window.history.back()}
+          className="flex items-center gap-2 text-dark-400 hover:text-white
+                     transition-colors text-sm font-medium group mb-4">
+          <span className="group-hover:-translate-x-1 transition-transform duration-200">←</span>
+          Volver
+        </button>
+        <p className="text-brand-500 text-sm font-semibold uppercase tracking-widest mb-2">
+          Cuenta
         </p>
-       <h1 className="font-display text-4xl text-white tracking-wide">MI PERFIL</h1>
-    </div>
+        <h1 className="font-display text-4xl text-white tracking-wide">MI PERFIL</h1>
+      </div>
 
       {success && (
         <div className="bg-green-500/10 border border-green-500/20 text-green-400
@@ -136,7 +157,6 @@ export default function ProfilePage() {
               <input value={name} onChange={(e) => setName(e.target.value)}
                 className="input" />
             </div>
-
             <div>
               <label className="block text-sm font-medium text-dark-300 mb-1.5">
                 Teléfono
@@ -154,17 +174,13 @@ export default function ProfilePage() {
                   maxLength={8}
                 />
               </div>
-              <p className="text-xs text-dark-500 mt-1">
-                Solo los 8 dígitos de tu número
-              </p>
+              <p className="text-xs text-dark-500 mt-1">Solo los 8 dígitos de tu número</p>
             </div>
-
             <div className="flex gap-3">
               <button onClick={() => setEditing(false)} className="btn-secondary flex-1">
                 Cancelar
               </button>
-              <button onClick={handleSaveProfile} disabled={saving}
-                className="btn-primary flex-1">
+              <button onClick={handleSaveProfile} disabled={saving} className="btn-primary flex-1">
                 {saving ? 'Guardando...' : 'Guardar'}
               </button>
             </div>
@@ -181,7 +197,7 @@ export default function ProfilePage() {
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-dark-400">Rol</span>
-              <span className="font-medium text-white capitalize">
+              <span className="font-medium text-white">
                 {user.role === 'CLIENT' ? 'Cliente'
                   : user.role === 'ADMIN' ? 'Administrador'
                   : 'Manager'}
@@ -220,33 +236,26 @@ export default function ProfilePage() {
                 <X size={16} />
               </button>
             </div>
-
-            {addrError && (
-              <p className="text-red-400 text-xs">{addrError}</p>
-            )}
-
+            {addrError && <p className="text-red-400 text-xs">{addrError}</p>}
             <div>
               <label className="block text-xs font-medium text-dark-400 mb-1">
                 Alias (Ej: Casa, Trabajo)
               </label>
-              <input value={addrAlias}
-                onChange={(e) => setAddrAlias(e.target.value)}
+              <input value={addrAlias} onChange={(e) => setAddrAlias(e.target.value)}
                 placeholder="Casa" className="input text-sm" />
             </div>
             <div>
               <label className="block text-xs font-medium text-dark-400 mb-1">
                 Dirección
               </label>
-              <input value={addrStreet}
-                onChange={(e) => setAddrStreet(e.target.value)}
+              <input value={addrStreet} onChange={(e) => setAddrStreet(e.target.value)}
                 placeholder="6a Avenida 3-12, Zona 1" className="input text-sm" />
             </div>
             <div>
               <label className="block text-xs font-medium text-dark-400 mb-1">
                 Ciudad / Municipio
               </label>
-              <input value={addrCity}
-                onChange={(e) => setAddrCity(e.target.value)}
+              <input value={addrCity} onChange={(e) => setAddrCity(e.target.value)}
                 placeholder="Ciudad de Guatemala" className="input text-sm" />
             </div>
             <div className="flex gap-2 pt-1">
@@ -286,6 +295,27 @@ export default function ProfilePage() {
                   </div>
                   <p className="text-xs text-dark-400 mt-0.5 truncate">{addr.street}</p>
                   <p className="text-xs text-dark-500">{addr.city}</p>
+
+                  {/* Acciones */}
+                  <div className="flex items-center gap-3 mt-2">
+                    {!addr.isDefault && (
+                      <button
+                        onClick={() => handleSetDefault(addr.id)}
+                        className="flex items-center gap-1 text-xs text-amber-400
+                                   hover:text-amber-300 transition-colors">
+                        <Star size={11} />
+                        Marcar como principal
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleDeleteAddress(addr.id)}
+                      disabled={deletingId === addr.id}
+                      className="flex items-center gap-1 text-xs text-red-400
+                                 hover:text-red-300 transition-colors">
+                      <Trash2 size={11} />
+                      {deletingId === addr.id ? 'Eliminando...' : 'Eliminar'}
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}

@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
-import { X } from 'lucide-react';
+import { X, Search } from 'lucide-react';
 import { orderApi } from '../../services/api';
 
 const STATUSES = [
-  { value: 'PENDING',   label: 'Pendiente'   },
-  { value: 'CONFIRMED', label: 'Confirmado'  },
-  { value: 'PREPARING', label: 'Preparando'  },
-  { value: 'READY',     label: 'Listo'       },
-  { value: 'DELIVERED', label: 'Entregado'   },
-  { value: 'CANCELLED', label: 'Cancelado'   },
+  { value: 'PENDING',   label: 'Pendiente'  },
+  { value: 'CONFIRMED', label: 'Confirmado' },
+  { value: 'PREPARING', label: 'Preparando' },
+  { value: 'READY',     label: 'Listo'      },
+  { value: 'DELIVERED', label: 'Entregado'  },
+  { value: 'CANCELLED', label: 'Cancelado'  },
 ];
 
 const STATUS_COLORS: Record<string, string> = {
@@ -21,9 +21,10 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function BOOrdersPage() {
-  const [orders, setOrders]           = useState<any[]>([]);
-  const [filter, setFilter]           = useState('');
-  const [loading, setLoading]         = useState(true);
+  const [orders, setOrders]               = useState<any[]>([]);
+  const [filter, setFilter]               = useState('');
+  const [search, setSearch]               = useState('');
+  const [loading, setLoading]             = useState(true);
   const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
 
   const load = () => {
@@ -38,13 +39,11 @@ export default function BOOrdersPage() {
   const changeStatus = async (id: number, status: string) => {
     await orderApi.updateStatus(id, status);
     load();
-    // Actualizar también el pedido seleccionado si está abierto
     if (selectedOrder?.id === id) {
       setSelectedOrder((prev: any) => ({ ...prev, status }));
     }
   };
 
-  // Extraer info de entrega de las notas
   const getDeliveryInfo = (notes?: string) => {
     if (!notes) return { type: 'Pickup', address: null };
     if (notes.includes('Entrega a domicilio')) {
@@ -53,6 +52,18 @@ export default function BOOrdersPage() {
     }
     return { type: 'Pickup', address: null };
   };
+
+  // Filtrar por búsqueda en el frontend
+  const filteredOrders = orders.filter((o) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return (
+      String(o.id).includes(q) ||
+      o.user?.name?.toLowerCase().includes(q) ||
+      o.user?.email?.toLowerCase().includes(q) ||
+      o.restaurant?.name?.toLowerCase().includes(q)
+    );
+  });
 
   return (
     <div className="space-y-6">
@@ -64,26 +75,54 @@ export default function BOOrdersPage() {
         <h1 className="font-display text-3xl text-white tracking-wide">CONSULTAR PEDIDOS</h1>
       </div>
 
-      {/* Filtros */}
-      <div className="flex flex-wrap gap-2">
-        <button onClick={() => setFilter('')}
-          className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-            !filter
-              ? 'bg-brand-500 text-white shadow-glow'
-              : 'bg-dark-800 border border-dark-600 text-dark-300 hover:text-white'
-          }`}>
-          Todos
-        </button>
-        {STATUSES.map((s) => (
-          <button key={s.value} onClick={() => setFilter(s.value)}
+      {/* Búsqueda + Filtros */}
+      <div className="space-y-3">
+        {/* Buscador */}
+        <div className="relative max-w-md">
+          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-dark-500" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por #, cliente, email o restaurante..."
+            className="input pl-10"
+          />
+          {search && (
+            <button onClick={() => setSearch('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-500
+                         hover:text-white transition-colors">
+              <X size={14} />
+            </button>
+          )}
+        </div>
+
+        {/* Filtros por estado */}
+        <div className="flex flex-wrap gap-2">
+          <button onClick={() => setFilter('')}
             className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-              filter === s.value
+              !filter
                 ? 'bg-brand-500 text-white shadow-glow'
                 : 'bg-dark-800 border border-dark-600 text-dark-300 hover:text-white'
             }`}>
-            {s.label}
+            Todos
           </button>
-        ))}
+          {STATUSES.map((s) => (
+            <button key={s.value} onClick={() => setFilter(s.value)}
+              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+                filter === s.value
+                  ? 'bg-brand-500 text-white shadow-glow'
+                  : 'bg-dark-800 border border-dark-600 text-dark-300 hover:text-white'
+              }`}>
+              {s.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Contador de resultados */}
+        {search && (
+          <p className="text-dark-500 text-xs">
+            {filteredOrders.length} resultado{filteredOrders.length !== 1 ? 's' : ''} para "{search}"
+          </p>
+        )}
       </div>
 
       {/* Tabla */}
@@ -106,22 +145,20 @@ export default function BOOrdersPage() {
                   Cargando pedidos...
                 </td>
               </tr>
-            ) : orders.length === 0 ? (
+            ) : filteredOrders.length === 0 ? (
               <tr>
                 <td colSpan={9} className="text-center py-12 text-dark-500">
-                  No hay pedidos aún
+                  {search ? `No se encontraron pedidos para "${search}"` : 'No hay pedidos aún'}
                 </td>
               </tr>
-            ) : orders.map((o) => {
+            ) : filteredOrders.map((o) => {
               const delivery = getDeliveryInfo(o.notes);
               const statusLabel = STATUSES.find(s => s.value === o.status)?.label ?? o.status;
               return (
                 <tr key={o.id} className="hover:bg-dark-700/50 transition-colors">
                   <td className="px-4 py-4">
-                    <button
-                      onClick={() => setSelectedOrder(o)}
-                      className="font-medium text-brand-400 hover:text-brand-300
-                                 transition-colors">
+                    <button onClick={() => setSelectedOrder(o)}
+                      className="font-medium text-brand-400 hover:text-brand-300 transition-colors">
                       #{o.id}
                     </button>
                   </td>
@@ -175,7 +212,8 @@ export default function BOOrdersPage() {
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm"
                onClick={() => setSelectedOrder(null)} />
           <div className="relative bg-dark-800 border border-dark-600 rounded-2xl
-                          w-full max-w-lg shadow-card animate-slide-up max-h-[90vh] overflow-y-auto">
+                          w-full max-w-lg shadow-card animate-slide-up
+                          max-h-[90vh] overflow-y-auto">
 
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-dark-700

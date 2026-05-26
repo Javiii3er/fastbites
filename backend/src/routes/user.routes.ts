@@ -32,15 +32,45 @@ userRouter.put('/profile', authenticate, async (req, res, next) => {
 // Direcciones
 userRouter.get('/addresses', authenticate, async (req, res, next) => {
   try {
-    const addresses = await prisma.address.findMany({ where: { userId: req.user!.userId } });
+    const addresses = await prisma.address.findMany({
+      where: { userId: req.user!.userId },
+      orderBy: { isDefault: 'desc' },
+    });
     sendSuccess(res, addresses);
   } catch (err) { next(err); }
 });
 
 userRouter.post('/addresses', authenticate, async (req, res, next) => {
   try {
-    const address = await prisma.address.create({ data: { ...req.body, userId: req.user!.userId } });
+    const address = await prisma.address.create({
+      data: { ...req.body, userId: req.user!.userId }
+    });
     sendSuccess(res, address, 'Dirección guardada', 201);
+  } catch (err) { next(err); }
+});
+
+// Eliminar dirección
+userRouter.delete('/addresses/:id', authenticate, async (req, res, next) => {
+  try {
+    await prisma.address.deleteMany({
+      where: { id: parseInt(req.params.id), userId: req.user!.userId }
+    });
+    sendSuccess(res, null, 'Dirección eliminada');
+  } catch (err) { next(err); }
+});
+
+// Marcar dirección como principal
+userRouter.patch('/addresses/:id/default', authenticate, async (req, res, next) => {
+  try {
+    await prisma.address.updateMany({
+      where: { userId: req.user!.userId },
+      data: { isDefault: false }
+    });
+    const address = await prisma.address.update({
+      where: { id: parseInt(req.params.id) },
+      data: { isDefault: true }
+    });
+    sendSuccess(res, address, 'Dirección principal actualizada');
   } catch (err) { next(err); }
 });
 

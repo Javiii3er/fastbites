@@ -46,7 +46,7 @@ export const orderApi = {
   getMine: (page = 1) =>
     api.get<ApiResponse<Order[]>>('/orders/my', { params: { page } }),
 
-  getAll: (params?: { page?: number; status?: string }) =>
+  getAll: (params?: { page?: number; status?: string; search?: string }) =>
     api.get<ApiResponse<Order[]>>('/orders', { params }),
 
   updateStatus: (id: number, status: string) =>
@@ -57,12 +57,14 @@ export const orderApi = {
 export const offerApi = {
   getAll: () => api.get<ApiResponse<Offer[]>>('/offers'),
 
-  create: (data: Partial<Offer>) => api.post<ApiResponse<Offer>>('/offers', data),
+  create: (data: Partial<Offer>) =>
+    api.post<ApiResponse<Offer>>('/offers', data),
 
   update: (id: number, data: Partial<Offer>) =>
     api.put<ApiResponse<Offer>>(`/offers/${id}`, data),
 
-  toggle: (id: number) => api.patch(`/offers/${id}/toggle`),
+  toggle: (id: number) =>
+    api.patch(`/offers/${id}/toggle`),
 };
 
 // ─── Restaurants ──────────────────────────────────────────────────────────────
@@ -74,17 +76,19 @@ export const restaurantApi = {
 
 // ─── Reports ──────────────────────────────────────────────────────────────────
 export const reportApi = {
-  salesByDay: () => api.get('/reports/sales/by-day'),
+  salesByDay:     () => api.get('/reports/sales/by-day'),
   salesByDayPart: () => api.get('/reports/sales/by-daypart'),
-  salesByHour: () => api.get('/reports/sales/by-hour'),
+  salesByHour:    () => api.get('/reports/sales/by-hour'),
 };
 
-// ─── Users (admin) ────────────────────────────────────────────────────────────
+// ─── Users ────────────────────────────────────────────────────────────────────
 export const userApi = {
-  getAll: () => api.get<ApiResponse<User[]>>('/users'),
-  toggle: (id: number) => api.patch(`/users/${id}/toggle`),
-  getProfile: () => api.get<ApiResponse<User>>('/users/profile'),
-  updateProfile: (data: Partial<User>) => api.put('/users/profile', data),
-  getAddresses: () => api.get('/users/addresses'),
-  addAddress: (data: unknown) => api.post('/users/addresses', data),
+  getAll:           ()                  => api.get<ApiResponse<User[]>>('/users'),
+  toggle:           (id: number)        => api.patch(`/users/${id}/toggle`),
+  getProfile:       ()                  => api.get<ApiResponse<User>>('/users/profile'),
+  updateProfile:    (data: Partial<User>) => api.put('/users/profile', data),
+  getAddresses:     ()                  => api.get('/users/addresses'),
+  addAddress:       (data: unknown)     => api.post('/users/addresses', data),
+  deleteAddress:    (id: number)        => api.delete(`/users/addresses/${id}`),
+  setDefaultAddress:(id: number)        => api.patch(`/users/addresses/${id}/default`),
 };

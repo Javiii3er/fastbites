@@ -37,12 +37,18 @@ const getCategoryColor = (name: string) => {
 };
 
 export default function HomePage() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [offers, setOffers]         = useState<Offer[]>([]);
+  const [categories, setCategories]     = useState<Category[]>([]);
+  const [offers, setOffers]             = useState<Offer[]>([]);
+  const [loadingCats, setLoadingCats]   = useState(true);
+  const [loadingOffers, setLoadingOffers] = useState(true);
 
   useEffect(() => {
-    categoryApi.getAll().then((r) => setCategories(r.data.data));
-    offerApi.getAll().then((r) => setOffers(r.data.data));
+    categoryApi.getAll()
+      .then((r) => setCategories(r.data.data))
+      .finally(() => setLoadingCats(false));
+    offerApi.getAll()
+      .then((r) => setOffers(r.data.data))
+      .finally(() => setLoadingOffers(false));
   }, []);
 
   return (
@@ -100,9 +106,9 @@ export default function HomePage() {
       {/* Features */}
       <section className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {[
-          { icon: Zap,         title: 'Pedido rápido', desc: 'En menos de 3 clics ya tienes tu pedido confirmado.'   },
-          { icon: Clock,       title: 'Seguimiento',   desc: 'Monitorea el estado de tu pedido en tiempo real.'      },
-          { icon: ShieldCheck, title: 'Pago seguro',   desc: 'Acepta tarjeta o efectivo contra entrega.'             },
+          { icon: Zap,         title: 'Pedido rápido', desc: 'En menos de 3 clics ya tienes tu pedido confirmado.'  },
+          { icon: Clock,       title: 'Seguimiento',   desc: 'Monitorea el estado de tu pedido en tiempo real.'     },
+          { icon: ShieldCheck, title: 'Pago seguro',   desc: 'Acepta tarjeta o efectivo contra entrega.'            },
         ].map(({ icon: Icon, title, desc }) => (
           <div key={title}
             className="card p-6 flex gap-4 items-start group
@@ -120,22 +126,36 @@ export default function HomePage() {
       </section>
 
       {/* Categorías */}
-      {categories.length > 0 && (
-        <section>
-          <div className="flex items-end justify-between mb-8">
-            <div>
-              <p className="text-brand-500 text-sm font-semibold uppercase tracking-widest mb-2">
-                Categorías
-              </p>
-              <h2 className="font-display text-4xl text-white tracking-wide">EXPLORA EL MENÚ</h2>
-            </div>
+      <section>
+        <div className="flex items-end justify-between mb-8">
+          <div>
+            <p className="text-brand-500 text-sm font-semibold uppercase tracking-widest mb-2">
+              Categorías
+            </p>
+            <h2 className="font-display text-4xl text-white tracking-wide">EXPLORA EL MENÚ</h2>
+          </div>
+          {!loadingCats && categories.length > 0 && (
             <Link to="/products"
               className="hidden sm:flex items-center gap-1.5 text-dark-400
                          hover:text-white text-sm font-medium transition-colors">
               Ver todo <ChevronRight size={16} />
             </Link>
-          </div>
+          )}
+        </div>
 
+        {/* Skeleton de categorías */}
+        {loadingCats ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <div key={i} className="card animate-pulse">
+                <div className="h-36 bg-dark-700 rounded-t-2xl" />
+                <div className="p-3">
+                  <div className="h-4 bg-dark-700 rounded w-3/4" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             {categories.map((cat) => (
               <Link key={cat.id} to={`/products?categoryId=${cat.id}`}
@@ -160,26 +180,44 @@ export default function HomePage() {
               </Link>
             ))}
           </div>
-        </section>
-      )}
+        )}
+      </section>
 
       {/* Ofertas */}
-      {offers.length > 0 && (
-        <section>
-          <div className="flex items-end justify-between mb-8">
-            <div>
-              <p className="text-brand-500 text-sm font-semibold uppercase tracking-widest mb-2">
-                Promociones
-              </p>
-              <h2 className="font-display text-4xl text-white tracking-wide">OFERTAS ACTIVAS</h2>
-            </div>
+      <section>
+        <div className="flex items-end justify-between mb-8">
+          <div>
+            <p className="text-brand-500 text-sm font-semibold uppercase tracking-widest mb-2">
+              Promociones
+            </p>
+            <h2 className="font-display text-4xl text-white tracking-wide">OFERTAS ACTIVAS</h2>
+          </div>
+          {!loadingOffers && offers.length > 0 && (
             <Link to="/offers"
               className="hidden sm:flex items-center gap-1.5 text-dark-400
                          hover:text-white text-sm font-medium transition-colors">
               Ver todas <ChevronRight size={16} />
             </Link>
-          </div>
+          )}
+        </div>
 
+        {/* Skeleton de ofertas */}
+        {loadingOffers ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <div key={i} className="card p-6 animate-pulse space-y-3">
+                <div className="h-6 bg-dark-700 rounded w-20" />
+                <div className="h-8 bg-dark-700 rounded w-2/3" />
+                <div className="h-4 bg-dark-700 rounded w-full" />
+                <div className="h-4 bg-dark-700 rounded w-3/4" />
+              </div>
+            ))}
+          </div>
+        ) : offers.length === 0 ? (
+          <div className="text-center py-10 text-dark-500">
+            No hay ofertas activas en este momento
+          </div>
+        ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             {offers.slice(0, 2).map((offer) => (
               <div key={offer.id}
@@ -206,13 +244,15 @@ export default function HomePage() {
                 )}
                 <div className="mt-4 flex items-center gap-1.5 text-xs text-dark-500">
                   <span>Válido hasta:</span>
-                  <span>{new Date(offer.endsAt).toLocaleDateString('es-GT', { dateStyle: 'long' })}</span>
+                  <span>
+                    {new Date(offer.endsAt).toLocaleDateString('es-GT', { dateStyle: 'long' })}
+                  </span>
                 </div>
               </div>
             ))}
           </div>
-        </section>
-      )}
+        )}
+      </section>
 
       {/* CTA final */}
       <section className="card p-10 text-center bg-gradient-to-br

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { productApi, categoryApi } from '../../services/api';
 import type { Product, Category } from '../../types';
 
@@ -17,6 +17,8 @@ const emptyForm: ProductForm = {
   categoryId: '', restaurantId: '1', imageUrl: '',
 };
 
+const PAGE_SIZE = 10;
+
 export default function BOProductsPage() {
   const [products, setProducts]     = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -26,11 +28,13 @@ export default function BOProductsPage() {
   const [form, setForm]             = useState<ProductForm>(emptyForm);
   const [saving, setSaving]         = useState(false);
   const [error, setError]           = useState('');
+  const [search, setSearch]         = useState('');
+  const [page, setPage]             = useState(1);
 
   const load = () => {
     setLoading(true);
     Promise.all([
-      productApi.getAll({ limit: 50 }),
+      productApi.getAll({ limit: 100 }),
       categoryApi.getAll(),
     ]).then(([p, c]) => {
       setProducts(p.data.data);
@@ -39,6 +43,23 @@ export default function BOProductsPage() {
   };
 
   useEffect(() => { load(); }, []);
+
+  // Filtrar por búsqueda
+  const filtered = products.filter((p) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return (
+      p.name.toLowerCase().includes(q) ||
+      p.category?.name.toLowerCase().includes(q)
+    );
+  });
+
+  // Paginación
+  const totalPages  = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginated   = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  // Reset página al buscar
+  useEffect(() => { setPage(1); }, [search]);
 
   const openCreate = () => {
     setEditing(null);
@@ -115,6 +136,29 @@ export default function BOProductsPage() {
         </button>
       </div>
 
+      {/* Buscador */}
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1 max-w-md">
+          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-dark-500" />
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Buscar por nombre o categoría..."
+            className="input pl-10"
+          />
+          {search && (
+            <button onClick={() => setSearch('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-500
+                         hover:text-white transition-colors">
+              <X size={14} />
+            </button>
+          )}
+        </div>
+        <p className="text-dark-500 text-sm">
+          {filtered.length} producto{filtered.length !== 1 ? 's' : ''}
+        </p>
+      </div>
+
       {/* Tabla */}
       <div className="card overflow-x-auto">
         <table className="w-full text-sm">
@@ -133,7 +177,13 @@ export default function BOProductsPage() {
                   Cargando...
                 </td>
               </tr>
-            ) : products.map((p) => (
+            ) : paginated.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="text-center py-12 text-dark-500">
+                  {search ? `No se encontraron productos para "${search}"` : 'No hay productos'}
+                </td>
+              </tr>
+            ) : paginated.map((p) => (
               <tr key={p.id} className="hover:bg-dark-700/50 transition-colors">
                 {/* Miniatura */}
                 <td className="px-3 py-3">
@@ -179,6 +229,44 @@ export default function BOProductsPage() {
             ))}
           </tbody>
         </table>
+
+        {/* Paginación */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-between px-5 py-4 border-t border-dark-700">
+            <p className="text-dark-500 text-xs">
+              Página {page} de {totalPages} — {filtered.length} productos
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setPage(page - 1)}
+                disabled={page === 1}
+                className="p-1.5 rounded-lg bg-dark-700 border border-dark-600
+                           text-dark-300 hover:text-white disabled:opacity-40
+                           disabled:cursor-not-allowed transition-colors">
+                <ChevronLeft size={16} />
+              </button>
+              {Array.from({ length: totalPages }).map((_, i) => (
+                <button key={i}
+                  onClick={() => setPage(i + 1)}
+                  className={`w-8 h-8 rounded-lg text-xs font-semibold transition-all ${
+                    page === i + 1
+                      ? 'bg-brand-500 text-white shadow-glow'
+                      : 'bg-dark-700 border border-dark-600 text-dark-300 hover:text-white'
+                  }`}>
+                  {i + 1}
+                </button>
+              ))}
+              <button
+                onClick={() => setPage(page + 1)}
+                disabled={page === totalPages}
+                className="p-1.5 rounded-lg bg-dark-700 border border-dark-600
+                           text-dark-300 hover:text-white disabled:opacity-40
+                           disabled:cursor-not-allowed transition-colors">
+                <ChevronRight size={16} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modal */}
@@ -239,7 +327,6 @@ export default function BOProductsPage() {
                   onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
                   placeholder="https://ejemplo.com/imagen.jpg"
                   className="input" />
-                {/* Preview */}
                 {form.imageUrl && (
                   <div className="mt-2 rounded-xl overflow-hidden h-32 bg-dark-700">
                     <img src={form.imageUrl} alt="Preview"
