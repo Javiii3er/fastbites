@@ -34,17 +34,17 @@ const DEFAULT_DAYPARTS: DayPartForm[] = [
 ];
 
 export default function BORestaurantsPage() {
-  const [restaurants, setRestaurants]   = useState<any[]>([]);
-  const [showModal, setShowModal]       = useState(false);
+  const [restaurants, setRestaurants]           = useState<any[]>([]);
+  const [showModal, setShowModal]               = useState(false);
   const [showDaypartModal, setShowDaypartModal] = useState(false);
-  const [editing, setEditing]           = useState<any | null>(null);
-  const [editingDaypart, setEditingDaypart] = useState<any | null>(null);
-  const [form, setForm]                 = useState<RestaurantForm>(emptyForm);
-  const [dayPartForms, setDayPartForms] = useState<DayPartForm[]>(DEFAULT_DAYPARTS);
-  const [saving, setSaving]             = useState(false);
-  const [savingDp, setSavingDp]         = useState(false);
-  const [error, setError]               = useState('');
-  const [dpError, setDpError]           = useState('');
+  const [editing, setEditing]                   = useState<any | null>(null);
+  const [editingDaypart, setEditingDaypart]     = useState<any | null>(null);
+  const [form, setForm]                         = useState<RestaurantForm>(emptyForm);
+  const [dayPartForms, setDayPartForms]         = useState<DayPartForm[]>(DEFAULT_DAYPARTS);
+  const [saving, setSaving]                     = useState(false);
+  const [savingDp, setSavingDp]                 = useState(false);
+  const [error, setError]                       = useState('');
+  const [dpError, setDpError]                   = useState('');
 
   const load = () => restaurantApi.getAll().then((r) => setRestaurants(r.data.data));
   useEffect(() => { load(); }, []);
@@ -71,7 +71,6 @@ export default function BORestaurantsPage() {
 
   const openDayparts = (r: any) => {
     setEditingDaypart(r);
-    // Combinar los dayparts existentes con los defaults
     const existing: Record<string, any> = {};
     (r.dayParts ?? []).forEach((dp: any) => { existing[dp.dayPart] = dp; });
     setDayPartForms(DEFAULT_DAYPARTS.map((def) => ({
@@ -116,9 +115,8 @@ export default function BORestaurantsPage() {
   };
 
   const handleSaveDayparts = async () => {
-    // Validar que startTime < endTime en cada uno
     for (const dp of dayPartForms) {
-      if (dp.startTime >= dp.endTime) {
+      if (dp.isActive && dp.startTime >= dp.endTime) {
         setDpError(`La hora de inicio debe ser menor a la hora de fin en ${DAY_PART_LABELS[dp.dayPart]}`);
         return;
       }
@@ -190,7 +188,6 @@ export default function BORestaurantsPage() {
               </div>
             </div>
 
-            {/* Horarios actuales */}
             {r.dayParts?.length > 0 && (
               <div className="mt-4 pt-4 border-t border-dark-700">
                 <div className="flex items-center gap-1.5 text-dark-500 text-xs mb-2">
@@ -212,7 +209,6 @@ export default function BORestaurantsPage() {
               </div>
             )}
 
-            {/* Acciones */}
             <div className="flex gap-3 mt-4 pt-4 border-t border-dark-700">
               <button onClick={() => openEdit(r)}
                 className="text-xs font-medium text-dark-400 hover:text-white transition-colors">
@@ -229,14 +225,16 @@ export default function BORestaurantsPage() {
         ))}
       </div>
 
-      {/* ─── Modal Restaurante ──────────────────────────────────────── */}
+      {/* ─── Modal Restaurante ─────────────────────────────────────── */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm"
                onClick={() => setShowModal(false)} />
           <div className="relative bg-dark-800 border border-dark-600 rounded-2xl
-                          w-full max-w-lg shadow-card animate-slide-up">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-dark-700">
+                          w-full max-w-lg shadow-card animate-slide-up
+                          max-h-[90vh] flex flex-col">
+
+            <div className="flex items-center justify-between px-6 py-4 border-b border-dark-700 shrink-0">
               <h2 className="font-display text-xl text-white tracking-wide">
                 {editing ? 'EDITAR RESTAURANTE' : 'NUEVO RESTAURANTE'}
               </h2>
@@ -246,7 +244,7 @@ export default function BORestaurantsPage() {
               </button>
             </div>
 
-            <div className="px-6 py-5 space-y-4">
+            <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
               {error && (
                 <div className="bg-brand-500/10 border border-brand-500/30
                                 text-brand-400 text-sm rounded-xl px-4 py-3">
@@ -290,7 +288,7 @@ export default function BORestaurantsPage() {
               </p>
             </div>
 
-            <div className="flex gap-3 px-6 py-4 border-t border-dark-700">
+            <div className="flex gap-3 px-6 py-4 border-t border-dark-700 shrink-0">
               <button onClick={() => setShowModal(false)} className="btn-secondary flex-1">
                 Cancelar
               </button>
@@ -302,14 +300,16 @@ export default function BORestaurantsPage() {
         </div>
       )}
 
-      {/* ─── Modal Daypart ──────────────────────────────────────────── */}
+      {/* ─── Modal Daypart ─────────────────────────────────────────── */}
       {showDaypartModal && editingDaypart && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm"
                onClick={() => setShowDaypartModal(false)} />
           <div className="relative bg-dark-800 border border-dark-600 rounded-2xl
-                          w-full max-w-lg shadow-card animate-slide-up">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-dark-700">
+                          w-full max-w-lg shadow-card animate-slide-up
+                          max-h-[90vh] flex flex-col">
+
+            <div className="flex items-center justify-between px-6 py-4 border-b border-dark-700 shrink-0">
               <div>
                 <h2 className="font-display text-xl text-white tracking-wide">
                   CONFIGURAR DAYPART
@@ -322,7 +322,7 @@ export default function BORestaurantsPage() {
               </button>
             </div>
 
-            <div className="px-6 py-5 space-y-4">
+            <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
               {dpError && (
                 <div className="bg-brand-500/10 border border-brand-500/30
                                 text-brand-400 text-sm rounded-xl px-4 py-3">
@@ -345,7 +345,7 @@ export default function BORestaurantsPage() {
                     <span className="font-semibold text-white text-sm">
                       {DAY_PART_LABELS[dp.dayPart]}
                     </span>
-                    <label className="flex items-center gap-2 cursor-pointer">
+                    <div className="flex items-center gap-2">
                       <span className="text-xs text-dark-400">
                         {dp.isActive ? 'Activo' : 'Inactivo'}
                       </span>
@@ -358,7 +358,7 @@ export default function BORestaurantsPage() {
                           dp.isActive ? 'translate-x-5' : 'translate-x-1'
                         }`} />
                       </div>
-                    </label>
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
@@ -390,7 +390,7 @@ export default function BORestaurantsPage() {
               ))}
             </div>
 
-            <div className="flex gap-3 px-6 py-4 border-t border-dark-700">
+            <div className="flex gap-3 px-6 py-4 border-t border-dark-700 shrink-0">
               <button onClick={() => setShowDaypartModal(false)} className="btn-secondary flex-1">
                 Cancelar
               </button>
