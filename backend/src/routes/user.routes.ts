@@ -104,7 +104,7 @@ userRouter.post('/payment-methods', authenticate, async (req, res, next) => {
 
 userRouter.delete('/payment-methods/:id', authenticate, async (req, res, next) => {
   try {
-    await prisma.paymentMethod_.deleteMany({
+    await prisma.address.deleteMany({
       where: { id: parseInt(req.params.id), userId: req.user!.userId }
     });
     sendSuccess(res, null, 'Método de pago eliminado');
@@ -182,6 +182,37 @@ userRouter.post('/create', authenticate, authorize('ADMIN'), async (req, res, ne
       select: { id: true, name: true, email: true, role: true },
     });
     sendSuccess(res, user, 'Usuario creado correctamente', 201);
+  } catch (err) { next(err); }
+});
+
+// Editar datos de cualquier usuario (solo ADMIN)
+userRouter.put('/:id', authenticate, authorize('ADMIN'), async (req, res, next) => {
+  try {
+    const { name, email, phone, role } = req.body;
+    const id = parseInt(req.params.id);
+
+    // Verificar que el email no esté en uso por otro usuario
+    if (email) {
+      const exists = await prisma.user.findFirst({
+        where: { email, NOT: { id } }
+      });
+      if (exists) {
+        res.status(409).json({ success: false, message: 'Este email ya está en uso' });
+        return;
+      }
+    }
+
+    const user = await prisma.user.update({
+      where: { id },
+      data: {
+        ...(name  && { name }),
+        ...(email && { email }),
+        ...(phone !== undefined && { phone: phone || null }),
+        ...(role  && { role }),
+      },
+      select: { id: true, name: true, email: true, phone: true, role: true },
+    });
+    sendSuccess(res, user, 'Usuario actualizado correctamente');
   } catch (err) { next(err); }
 });
 
