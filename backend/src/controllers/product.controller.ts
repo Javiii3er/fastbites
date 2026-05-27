@@ -23,12 +23,14 @@ export const getProducts = async (req: Request, res: Response, next: NextFunctio
     const limit = Math.min(50, parseInt(req.query.limit as string) || 12);
     const skip = (page - 1) * limit;
     const categoryId = req.query.categoryId ? parseInt(req.query.categoryId as string) : undefined;
-    const search = req.query.search as string | undefined;
+    const search     = req.query.search as string | undefined;
+    const dayPart    = req.query.dayPart as string | undefined;
 
     const where = {
-      isActive: true,
-      ...(categoryId && { categoryId }),
-      ...(search && { name: { contains: search } }),
+    isActive: true,
+    ...(categoryId && { categoryId }),
+    ...(search     && { name: { contains: search } }),
+    ...(dayPart    && { category: { dayPart: dayPart as any } }),
     };
 
     const [products, total] = await prisma.$transaction([
