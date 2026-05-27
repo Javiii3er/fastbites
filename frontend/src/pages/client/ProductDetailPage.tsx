@@ -50,23 +50,31 @@ export default function ProductDetailPage() {
     <div className="text-center py-20 text-dark-500">Producto no encontrado</div>
   );
 
-  const sizeExtra   = product.sizes.find((s) => s.id === selectedSizeId)?.extraPrice ?? 0;
-  const drinkExtra  = product.drinks.find((d) => d.id === selectedDrinkId)?.price ?? 0;
+  const sizeExtra   = product.sizes?.find((s) => s.id === selectedSizeId)?.extraPrice ?? 0;
+  const drinkExtra  = product.drinks?.find((d) => d.id === selectedDrinkId)?.price ?? 0;
   const addonsTotal = selectedAddonIds.reduce((acc, aid) => {
-    const a = product.addons.find((a) => a.id === aid);
+    const a = product.addons?.find((a) => a.id === aid);
     return acc + (a ? Number(a.price) : 0);
   }, 0);
   const unitPrice = Number(product.basePrice) + Number(sizeExtra) + Number(drinkExtra) + addonsTotal;
 
-  const handleAddToCart = () => {
+  // ─── Función optimizada para esperar la inserción en la BD ───────────────────
+  const handleAddToCart = async () => {
     if (!isAuthenticated) {
       navigate('/login');
       return;
     }
-    addItem({
-      product, sizeId: selectedSizeId, drinkId: selectedDrinkId,
-      addonIds: selectedAddonIds, quantity, notes: notes || undefined, unitPrice,
+    
+    await addItem({
+      product, 
+      sizeId: selectedSizeId, 
+      drinkId: selectedDrinkId,
+      addonIds: selectedAddonIds, 
+      quantity, 
+      notes: notes || undefined, 
+      unitPrice,
     });
+    
     navigate('/cart');
   };
 
@@ -121,7 +129,7 @@ export default function ProductDetailPage() {
           </div>
 
           {/* Tamaños */}
-          {product.sizes.length > 0 && (
+          {product.sizes && product.sizes.length > 0 && (
             <div>
               <h3 className="font-semibold text-white mb-3">Tamaño</h3>
               <div className="flex flex-wrap gap-2">
@@ -141,7 +149,7 @@ export default function ProductDetailPage() {
           )}
 
           {/* Addons */}
-          {product.addons.length > 0 && (
+          {product.addons && product.addons.length > 0 && (
             <div>
               <h3 className="font-semibold text-white mb-3">Ingredientes adicionales</h3>
               <div className="space-y-2">
@@ -168,7 +176,7 @@ export default function ProductDetailPage() {
           )}
 
           {/* Bebidas */}
-          {product.drinks.length > 0 && (
+          {product.drinks && product.drinks.length > 0 && (
             <div>
               <h3 className="font-semibold text-white mb-3">Bebida</h3>
               <div className="flex flex-wrap gap-2">

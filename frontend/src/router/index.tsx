@@ -10,6 +10,7 @@ import BackofficeLayout from '../components/layout/BackofficeLayout';
 import LoginPage from '../pages/auth/LoginPage';
 import RegisterPage from '../pages/auth/RegisterPage';
 import ForgotPasswordPage from '../pages/auth/ForgotPasswordPage';
+import ResetPasswordPage from '../pages/auth/ResetPasswordPage';
 
 // Client pages
 import HomePage from '../pages/client/HomePage';
@@ -52,6 +53,7 @@ export const router = createBrowserRouter([
       { path: '/login',           element: <LoginPage />          },
       { path: '/register',        element: <RegisterPage />       },
       { path: '/forgot-password', element: <ForgotPasswordPage /> },
+      { path: '/reset-password',  element: <ResetPasswordPage />  },
     ],
   },
 

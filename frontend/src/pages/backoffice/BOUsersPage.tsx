@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, X, RefreshCw } from 'lucide-react';
+import { Plus, X, RefreshCw, Pencil } from 'lucide-react';
 import { userApi } from '../../services/api';
 import api from '../../services/http';
 
@@ -23,6 +23,13 @@ interface UserForm {
   role: 'ADMIN' | 'MANAGER' | 'CLIENT';
 }
 
+interface EditForm {
+  name: string;
+  email: string;
+  phone: string;
+  role: 'ADMIN' | 'MANAGER' | 'CLIENT';
+}
+
 const emptyForm: UserForm = {
   name: '', email: '', password: '', phone: '', role: 'CLIENT',
 };
@@ -36,10 +43,16 @@ export default function BOUsersPage() {
   const [success, setSuccess]     = useState('');
 
   // Reset contraseña
-  const [showReset, setShowReset]       = useState<number | null>(null);
-  const [newPassword, setNewPassword]   = useState('');
-  const [resetting, setResetting]       = useState(false);
-  const [resetError, setResetError]     = useState('');
+  const [showReset, setShowReset]     = useState<number | null>(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [resetting, setResetting]     = useState(false);
+  const [resetError, setResetError]   = useState('');
+
+  // Editar usuario
+  const [showEdit, setShowEdit]   = useState<any | null>(null);
+  const [editForm, setEditForm]   = useState<EditForm>({ name: '', email: '', phone: '', role: 'CLIENT' });
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError]   = useState('');
 
   const load = () => userApi.getAll().then((r) => setUsers(r.data.data));
   useEffect(() => { load(); }, []);
@@ -91,6 +104,37 @@ export default function BOUsersPage() {
     }
   };
 
+  const openEdit = (u: any) => {
+    setShowEdit(u);
+    setEditForm({
+      name:  u.name,
+      email: u.email,
+      phone: u.phone ?? '',
+      role:  u.role,
+    });
+    setEditError('');
+  };
+
+  const handleEdit = async () => {
+    if (!editForm.name || !editForm.email) {
+      setEditError('Nombre y email son requeridos');
+      return;
+    }
+    setEditSaving(true);
+    setEditError('');
+    try {
+      await api.put(`/users/${showEdit.id}`, editForm);
+      setShowEdit(null);
+      load();
+      setSuccess('Usuario actualizado correctamente');
+      setTimeout(() => setSuccess(''), 3000);
+    } catch (err: any) {
+      setEditError(err.response?.data?.message ?? 'Error al actualizar usuario');
+    } finally {
+      setEditSaving(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -99,9 +143,12 @@ export default function BOUsersPage() {
           <p className="text-brand-500 text-sm font-semibold uppercase tracking-widest mb-1">
             Backoffice
           </p>
-          <h1 className="font-display text-3xl text-white tracking-wide">ADMINISTRAR USUARIOS</h1>
+          <h1 className="font-display text-3xl text-white tracking-wide">
+            ADMINISTRAR USUARIOS
+          </h1>
         </div>
-        <button onClick={() => { setShowModal(true); setForm(emptyForm); setError(''); }}
+        <button
+          onClick={() => { setShowModal(true); setForm(emptyForm); setError(''); }}
           className="btn-primary flex items-center gap-2">
           <Plus size={18} />
           Nuevo usuario
@@ -147,6 +194,13 @@ export default function BOUsersPage() {
                 <td className="px-5 py-4">
                   <div className="flex items-center gap-3">
                     <button
+                      onClick={() => openEdit(u)}
+                      className="text-xs font-medium text-dark-400 hover:text-white
+                                 transition-colors flex items-center gap-1">
+                      <Pencil size={12} />
+                      Editar
+                    </button>
+                    <button
                       onClick={() => { setShowReset(u.id); setNewPassword(''); setResetError(''); }}
                       className="text-xs font-medium text-dark-400 hover:text-white
                                  transition-colors flex items-center gap-1">
@@ -181,7 +235,6 @@ export default function BOUsersPage() {
                 <X size={20} />
               </button>
             </div>
-
             <div className="px-6 py-5 space-y-4">
               {error && (
                 <div className="bg-brand-500/10 border border-brand-500/30
@@ -189,7 +242,6 @@ export default function BOUsersPage() {
                   {error}
                 </div>
               )}
-
               <div>
                 <label className="block text-sm font-medium text-dark-300 mb-1.5">
                   Nombre completo *
@@ -198,7 +250,6 @@ export default function BOUsersPage() {
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                   placeholder="Juan Pérez" className="input" />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-dark-300 mb-1.5">
                   Correo electrónico *
@@ -207,7 +258,6 @@ export default function BOUsersPage() {
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                   placeholder="usuario@email.com" className="input" />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-dark-300 mb-1.5">
                   Teléfono
@@ -216,7 +266,6 @@ export default function BOUsersPage() {
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
                   placeholder="50212345678" className="input" />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-dark-300 mb-1.5">
                   Contraseña temporal *
@@ -225,11 +274,8 @@ export default function BOUsersPage() {
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                   placeholder="Mínimo 8 caracteres" className="input" />
               </div>
-
               <div>
-                <label className="block text-sm font-medium text-dark-300 mb-1.5">
-                  Rol
-                </label>
+                <label className="block text-sm font-medium text-dark-300 mb-1.5">Rol</label>
                 <select value={form.role}
                   onChange={(e) => setForm({ ...form, role: e.target.value as UserForm['role'] })}
                   className="input">
@@ -239,13 +285,82 @@ export default function BOUsersPage() {
                 </select>
               </div>
             </div>
-
             <div className="flex gap-3 px-6 py-4 border-t border-dark-700">
               <button onClick={() => setShowModal(false)} className="btn-secondary flex-1">
                 Cancelar
               </button>
               <button onClick={handleCreate} disabled={saving} className="btn-primary flex-1">
                 {saving ? 'Creando...' : 'Crear usuario'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal editar usuario */}
+      {showEdit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+               onClick={() => setShowEdit(null)} />
+          <div className="relative bg-dark-800 border border-dark-600 rounded-2xl
+                          w-full max-w-md shadow-card animate-slide-up">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-dark-700">
+              <h2 className="font-display text-xl text-white tracking-wide">
+                EDITAR USUARIO
+              </h2>
+              <button onClick={() => setShowEdit(null)}
+                className="text-dark-400 hover:text-white transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+            <div className="px-6 py-5 space-y-4">
+              {editError && (
+                <div className="bg-brand-500/10 border border-brand-500/30
+                                text-brand-400 text-sm rounded-xl px-4 py-3">
+                  {editError}
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-medium text-dark-300 mb-1.5">
+                  Nombre completo *
+                </label>
+                <input value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  placeholder="Juan Pérez" className="input" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-dark-300 mb-1.5">
+                  Correo electrónico *
+                </label>
+                <input type="email" value={editForm.email}
+                  onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                  placeholder="usuario@email.com" className="input" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-dark-300 mb-1.5">
+                  Teléfono
+                </label>
+                <input value={editForm.phone}
+                  onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                  placeholder="50212345678" className="input" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-dark-300 mb-1.5">Rol</label>
+                <select value={editForm.role}
+                  onChange={(e) => setEditForm({ ...editForm, role: e.target.value as EditForm['role'] })}
+                  className="input">
+                  <option value="CLIENT">Cliente</option>
+                  <option value="MANAGER">Manager</option>
+                  <option value="ADMIN">Administrador</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex gap-3 px-6 py-4 border-t border-dark-700">
+              <button onClick={() => setShowEdit(null)} className="btn-secondary flex-1">
+                Cancelar
+              </button>
+              <button onClick={handleEdit} disabled={editSaving} className="btn-primary flex-1">
+                {editSaving ? 'Guardando...' : 'Guardar cambios'}
               </button>
             </div>
           </div>
@@ -268,17 +383,13 @@ export default function BOUsersPage() {
                 <X size={20} />
               </button>
             </div>
-
             <div className="px-6 py-5 space-y-4">
               <p className="text-dark-400 text-sm">
-                Ingresa la nueva contraseña para el usuario. El usuario deberá
-                cambiarla en su próximo inicio de sesión.
+                Ingresa la nueva contraseña para el usuario.
               </p>
-
               {resetError && (
                 <p className="text-red-400 text-xs">{resetError}</p>
               )}
-
               <div>
                 <label className="block text-sm font-medium text-dark-300 mb-1.5">
                   Nueva contraseña
@@ -292,7 +403,6 @@ export default function BOUsersPage() {
                 />
               </div>
             </div>
-
             <div className="flex gap-3 px-6 py-4 border-t border-dark-700">
               <button onClick={() => setShowReset(null)} className="btn-secondary flex-1">
                 Cancelar

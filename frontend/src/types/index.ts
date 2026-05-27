@@ -45,6 +45,7 @@ export interface Drink {
 
 export interface Product {
   id: number;
+  restaurantId: number;
   name: string;
   description?: string;
   basePrice: number;

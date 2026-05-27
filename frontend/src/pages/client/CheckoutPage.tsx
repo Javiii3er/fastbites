@@ -40,7 +40,7 @@ export default function CheckoutPage() {
       const def = r.data.data.find((a: Address) => a.isDefault);
       if (def) setSelectedAddressId(def.id);
     });
-  }, []);
+  }, [items, navigate]);
 
   // ─── Aplicar cupón ───────────────────────────────────────
   const applyCode = async () => {
@@ -160,7 +160,9 @@ export default function CheckoutPage() {
           notes:     i.notes,
         })),
       });
-      clearCart();
+      
+      // Esperamos a que la petición de limpieza en la BD termine de manera segura
+      await clearCart();
       navigate('/orders');
     } catch (err: any) {
       setError(err.response?.data?.message ?? 'Error al procesar el pedido');
@@ -172,6 +174,12 @@ export default function CheckoutPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-slide-up">
       <div>
+        <button onClick={() => navigate('/cart')}
+          className="flex items-center gap-2 text-dark-400 hover:text-white
+                     transition-colors text-sm font-medium group mb-4">
+          <span className="group-hover:-translate-x-1 transition-transform duration-200">←</span>
+          Volver al carrito
+        </button>
         <p className="text-brand-500 text-sm font-semibold uppercase tracking-widest mb-2">
           Pago
         </p>
@@ -179,18 +187,18 @@ export default function CheckoutPage() {
       </div>
 
       {error && (
-  <div className="bg-brand-500/10 border border-brand-500/30
-                  text-brand-400 text-sm rounded-xl px-4 py-3">
-    <p>{error}</p>
-     {error.includes('disponible en') && (
-        <button
-        onClick={() => navigate('/cart')}
-        className="mt-2 text-xs font-semibold text-white underline hover:text-brand-300
-                   transition-colors">
-        ← Volver al carrito para modificar tu pedido
-        </button>
-        )}
-      </div>
+        <div className="bg-brand-500/10 border border-brand-500/30
+                        text-brand-400 text-sm rounded-xl px-4 py-3">
+          <p>{error}</p>
+          {error.includes('disponible en') && (
+            <button
+              onClick={() => navigate('/cart')}
+              className="mt-2 text-xs font-semibold text-white underline hover:text-brand-300
+                         transition-colors">
+              ← Volver al carrito para modificar tu pedido
+            </button>
+          )}
+        </div>
       )}  
 
       {/* Tipo de entrega */}
@@ -228,7 +236,7 @@ export default function CheckoutPage() {
                 {addresses.map((addr) => (
                   <label key={addr.id}
                     className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer
-                                transition-all ${
+                                 transition-all ${
                       selectedAddressId === addr.id
                         ? 'border-brand-500 bg-brand-500/10'
                         : 'border-dark-600 hover:border-dark-500'
@@ -251,32 +259,31 @@ export default function CheckoutPage() {
             )}
 
             {/* Usar nueva dirección */}
-          {!useNewAddress && addresses.length === 0 ? (
-          // Si no hay direcciones guardadas, mostrar campo directo
-          <div className="space-y-2">
-          <p className="text-xs font-medium text-dark-400 uppercase tracking-wide">
-              Dirección de entrega
-          </p>
-            <input
-            value={newAddress}
-            onChange={(e) => setNewAddress(e.target.value)}
-            placeholder="Ej: 6a Avenida 3-12, Zona 1, Ciudad de Guatemala"
-          className="input"
-            />
-          <p className="text-xs text-dark-500">
-          Guarda tus direcciones en{' '}
-          <a href="/profile" className="text-brand-400 hover:underline">Mi Perfil</a>{' '}
-              para usarlas más rápido la próxima vez.
-          </p>
-          </div>
-          ) : !useNewAddress ? (
-        <button
-            onClick={() => setUseNewAddress(true)}
-            className="flex items-center gap-2 text-sm text-brand-400
-               hover:text-brand-300 transition-colors font-medium">
-          <Plus size={16} />
-            Usar otra dirección
-        </button>
+            {!useNewAddress && addresses.length === 0 ? (
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-dark-400 uppercase tracking-wide">
+                  Dirección de entrega
+                </p>
+                <input
+                  value={newAddress}
+                  onChange={(e) => setNewAddress(e.target.value)}
+                  placeholder="Ej: 6a Avenida 3-12, Zona 1, Ciudad de Guatemala"
+                  className="input"
+                />
+                <p className="text-xs text-dark-500">
+                  Guarda tus direcciones en{' '}
+                  <a href="/profile" className="text-brand-400 hover:underline">Mi Perfil</a>{' '}
+                  para usarlas más rápido la próxima vez.
+                </p>
+              </div>
+            ) : !useNewAddress ? (
+              <button
+                onClick={() => setUseNewAddress(true)}
+                className="flex items-center gap-2 text-sm text-brand-400
+                           hover:text-brand-300 transition-colors font-medium">
+                <Plus size={16} />
+                Usar otra dirección
+              </button>
             ) : (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -397,8 +404,8 @@ export default function CheckoutPage() {
       <div className="card p-5">
         <h2 className="font-semibold text-white mb-4">Resumen del pedido</h2>
         <div className="space-y-2">
-          {items.map((item, i) => (
-            <div key={i} className="flex justify-between text-sm">
+          {items.map((item) => (
+            <div key={item.id} className="flex justify-between text-sm">
               <span className="text-dark-400">{item.quantity}x {item.product.name}</span>
               <span className="font-medium text-white">
                 Q{(item.unitPrice * item.quantity).toFixed(2)}
