@@ -9,20 +9,20 @@ import { OrderStatus, PaymentMethod } from '@prisma/client';
 
 const orderItemSchema = z.object({
   productId: z.number().int().positive(),
-  sizeId: z.number().int().positive().optional(),
-  drinkId: z.number().int().positive().optional(),
-  quantity: z.number().int().min(1).max(20),
-  notes: z.string().max(255).optional(),
-  addonIds: z.array(z.number().int().positive()).optional(),
+  sizeId:    z.number().int().positive().optional(),
+  drinkId:   z.number().int().positive().optional(),
+  quantity:  z.number().int().min(1).max(20),
+  notes:     z.string().max(255).optional(),
+  addonIds:  z.array(z.number().int().positive()).optional(),
 });
 
 export const createOrderSchema = z.object({
-  restaurantId: z.number().int().positive(),
-  addressId: z.number().int().positive().optional(),
-  offerId: z.number().int().positive().optional(),
+  restaurantId:  z.number().int().positive(),
+  addressId:     z.number().int().positive().optional(),
+  offerId:       z.number().int().positive().optional(),
   paymentMethod: z.nativeEnum(PaymentMethod),
-  notes: z.string().max(500).optional(),
-  items: z.array(orderItemSchema).min(1, 'El pedido debe tener al menos un producto'),
+  notes:         z.string().max(500).optional(),
+  items:         z.array(orderItemSchema).min(1, 'El pedido debe tener al menos un producto'),
 });
 
 // ─── Controladores ────────────────────────────────────────────────────────────
@@ -32,7 +32,6 @@ export const createOrder = async (req: Request, res: Response, next: NextFunctio
     const userId = req.user!.userId;
     const { restaurantId, addressId, offerId, paymentMethod, notes, items } = createOrderSchema.parse(req.body);
 
-    // Calcular precios
     let subtotal = 0;
     const orderItemsData = [];
 
@@ -66,18 +65,17 @@ export const createOrder = async (req: Request, res: Response, next: NextFunctio
       subtotal += itemTotal;
 
       orderItemsData.push({
-        productId: item.productId,
-        sizeId: item.sizeId,
-        drinkId: item.drinkId,
-        quantity: item.quantity,
-        unitPrice: unitPrice + addonTotal,
+        productId:  item.productId,
+        sizeId:     item.sizeId,
+        drinkId:    item.drinkId,
+        quantity:   item.quantity,
+        unitPrice:  unitPrice + addonTotal,
         totalPrice: itemTotal,
-        notes: item.notes,
-        addons: { create: addonsData },
+        notes:      item.notes,
+        addons:     { create: addonsData },
       });
     }
 
-    // Aplicar descuento si hay oferta
     let discount = 0;
     if (offerId) {
       const offer = await prisma.offer.findFirst({
@@ -106,9 +104,9 @@ export const createOrder = async (req: Request, res: Response, next: NextFunctio
 export const getMyOrders = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const userId = req.user!.userId;
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = 10;
-    const skip = (page - 1) * limit;
+    const page   = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit  = 10;
+    const skip   = (page - 1) * limit;
 
     const [orders, total] = await prisma.$transaction([
       prisma.order.findMany({
@@ -131,9 +129,9 @@ export const getMyOrders = async (req: Request, res: Response, next: NextFunctio
 
 export const getAllOrders = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const page = Math.max(1, parseInt(req.query.page as string) || 1);
-    const limit = 20;
-    const skip = (page - 1) * limit;
+    const page   = Math.max(1, parseInt(req.query.page as string) || 1);
+    const limit  = 20;
+    const skip   = (page - 1) * limit;
     const status = req.query.status as OrderStatus | undefined;
 
     const where = status ? { status } : {};
@@ -141,9 +139,9 @@ export const getAllOrders = async (req: Request, res: Response, next: NextFuncti
       prisma.order.findMany({
         where, skip, take: limit,
         include: {
-          user: { select: { name: true, email: true } },
+          user:       { select: { name: true, email: true } },
           restaurant: { select: { name: true } },
-          items: true,
+          items:      true,
         },
         orderBy: { createdAt: 'desc' },
       }),
@@ -158,9 +156,9 @@ export const getAllOrders = async (req: Request, res: Response, next: NextFuncti
 
 export const updateOrderStatus = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const id = parseInt(req.params.id);
+    const id      = parseInt(req.params.id);
     const { status } = z.object({ status: z.nativeEnum(OrderStatus) }).parse(req.body);
-    const order = await prisma.order.update({ where: { id }, data: { status } });
+    const order   = await prisma.order.update({ where: { id }, data: { status } });
     sendSuccess(res, order, 'Estado actualizado');
   } catch (err) {
     next(err);
@@ -179,7 +177,12 @@ export const salesByDay = async (req: Request, res: Response, next: NextFunction
       ORDER BY date DESC
       LIMIT 30
     `;
-    sendSuccess(res, sales);
+    const serialized = (sales as any[]).map((row) => ({
+      date:    row.date,
+      orders:  Number(row.orders),
+      revenue: Number(row.revenue),
+    }));
+    sendSuccess(res, serialized);
   } catch (err) {
     next(err);
   }
@@ -200,7 +203,12 @@ export const salesByDayPart = async (req: Request, res: Response, next: NextFunc
       WHERE status != 'CANCELLED'
       GROUP BY dayPart
     `;
-    sendSuccess(res, sales);
+    const serialized = (sales as any[]).map((row) => ({
+      dayPart: row.dayPart,
+      orders:  Number(row.orders),
+      revenue: Number(row.revenue),
+    }));
+    sendSuccess(res, serialized);
   } catch (err) {
     next(err);
   }
