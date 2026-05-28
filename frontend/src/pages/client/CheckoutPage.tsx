@@ -92,14 +92,30 @@ export default function CheckoutPage() {
         }
       }
       if (code === 'ALITAS30') {
-        const hasAlitas = items.some((i) =>
-          i.product.name.toLowerCase().includes('alita')
-        );
-        if (!hasAlitas) {
-          setCouponError('Este cupón solo aplica en pedidos que incluyan alitas'); return;
-        }
-      }
-      setAppliedOffer(offer);
+  const hasAlitas = items.some((i) =>
+    i.product.name.toLowerCase().includes('alita')
+  );
+  if (!hasAlitas) {
+    setCouponError('Este cupón solo aplica en pedidos que incluyan alitas'); return;
+  }
+}
+  if (code === 'PIZZABEBIDA') {
+  const hasPizza = items.some((i) =>
+    i.product.category?.name.toLowerCase().includes('pizza')
+  );
+  const hasBebida = items.some((i) =>
+    i.product.category?.name.toLowerCase().includes('bebida') ||
+    (i.drinkId !== null && i.drinkId !== undefined)
+  );
+  if (!hasPizza) {
+    setCouponError('Este cupón requiere al menos una pizza en el carrito'); return;
+  }
+  if (!hasBebida) {
+    setCouponError('Este cupón requiere una bebida — agrégala como acompañante o del catálogo'); return;
+  }
+}
+  setAppliedOffer(offer);
+
     } catch {
       setCouponError('Error al verificar el código');
     } finally {

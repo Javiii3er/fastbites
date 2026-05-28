@@ -19,14 +19,36 @@ router.get('/', async (_req, res, next) => {
 // Admin
 router.post('/', authenticate, authorize('ADMIN', 'MANAGER'), async (req, res, next) => {
   try {
-    const offer = await prisma.offer.create({ data: req.body });
+    const { title, description, discount, code, startsAt, endsAt } = req.body;
+    const offer = await prisma.offer.create({
+      data: {
+        title,
+        description: description || null,
+        discount:    parseFloat(discount),
+        code:        code || null,
+        startsAt:    new Date(startsAt),
+        endsAt:      new Date(endsAt),
+      },
+    });
     sendSuccess(res, offer, 'Oferta creada', 201);
   } catch (err) { next(err); }
 });
 
 router.put('/:id', authenticate, authorize('ADMIN', 'MANAGER'), async (req, res, next) => {
   try {
-    const offer = await prisma.offer.update({ where: { id: parseInt(req.params.id) }, data: req.body });
+    const { title, description, discount, code, startsAt, endsAt, isActive } = req.body;
+    const offer = await prisma.offer.update({
+      where: { id: parseInt(req.params.id) },
+      data: {
+        title,
+        description: description || null,
+        discount:    parseFloat(discount),
+        code:        code || null,
+        startsAt:    new Date(startsAt),
+        endsAt:      new Date(endsAt),
+        ...(isActive !== undefined && { isActive }),
+      },
+    });
     sendSuccess(res, offer);
   } catch (err) { next(err); }
 });
