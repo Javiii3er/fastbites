@@ -177,7 +177,7 @@ export default function OrdersPage() {
     setCancelling(showConfirm);
     setShowConfirm(null);
     try {
-      await orderApi.updateStatus(showConfirm, 'CANCELLED');
+      await orderApi.cancel(showConfirm);
       await load(true);
     } finally {
       setCancelling(null);

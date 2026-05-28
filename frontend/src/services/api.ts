@@ -12,10 +12,10 @@ export const authApi = {
   me: () => api.get<ApiResponse<User>>('/auth/me'),
 
   forgotPassword: (email: string) =>
-  api.post('/auth/forgot-password', { email }),
+    api.post('/auth/forgot-password', { email }),
 
-resetPassword: (token: string, password: string) =>
-  api.post('/auth/reset-password', { token, password }),
+  resetPassword: (token: string, password: string) =>
+    api.post('/auth/reset-password', { token, password }),
 };
 
 // ─── Products ─────────────────────────────────────────────────────────────────
@@ -60,6 +60,9 @@ export const orderApi = {
 
   updateStatus: (id: number, status: string) =>
     api.patch<ApiResponse<Order>>(`/orders/${id}/status`, { status }),
+
+  cancel: (id: number) =>
+    api.patch<ApiResponse<Order>>(`/orders/${id}/cancel`),
 };
 
 // ─── Offers ───────────────────────────────────────────────────────────────────
@@ -78,10 +81,10 @@ export const offerApi = {
 
 // ─── Restaurants ──────────────────────────────────────────────────────────────
 export const restaurantApi = {
-  getAll:         ()                             => api.get<ApiResponse<Restaurant[]>>('/restaurants'),
-  create:         (data: Partial<Restaurant>)    => api.post('/restaurants', data),
+  getAll:         ()                                      => api.get<ApiResponse<Restaurant[]>>('/restaurants'),
+  create:         (data: Partial<Restaurant>)             => api.post('/restaurants', data),
   update:         (id: number, data: Partial<Restaurant>) => api.put(`/restaurants/${id}`, data),
-  updateDayParts: (id: number, dayParts: any[])  => api.put(`/restaurants/${id}/dayparts`, { dayParts }),
+  updateDayParts: (id: number, dayParts: any[])           => api.put(`/restaurants/${id}/dayparts`, { dayParts }),
 };
 
 // ─── Reports ──────────────────────────────────────────────────────────────────
