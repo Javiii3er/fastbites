@@ -20,21 +20,22 @@ const emptyForm: ProductForm = {
 const PAGE_SIZE = 10;
 
 export default function BOProductsPage() {
-  const [products, setProducts]     = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading]       = useState(true);
-  const [showModal, setShowModal]   = useState(false);
-  const [editing, setEditing]       = useState<Product | null>(null);
-  const [form, setForm]             = useState<ProductForm>(emptyForm);
-  const [saving, setSaving]         = useState(false);
-  const [error, setError]           = useState('');
-  const [search, setSearch]         = useState('');
-  const [page, setPage]             = useState(1);
+  const [products, setProducts]       = useState<Product[]>([]);
+  const [categories, setCategories]   = useState<Category[]>([]);
+  const [loading, setLoading]         = useState(true);
+  const [showModal, setShowModal]     = useState(false);
+  const [editing, setEditing]         = useState<Product | null>(null);
+  const [form, setForm]               = useState<ProductForm>(emptyForm);
+  const [saving, setSaving]           = useState(false);
+  const [error, setError]             = useState('');
+  const [search, setSearch]           = useState('');
+  const [page, setPage]               = useState(1);
+  const [showInactive, setShowInactive] = useState(false);
 
   const load = () => {
     setLoading(true);
     Promise.all([
-      productApi.getAll({ limit: 100 }),
+      productApi.getAll({ limit: 100, ...(showInactive && { showAll: 'true' }) } as any),
       categoryApi.getAll(),
     ]).then(([p, c]) => {
       setProducts(p.data.data);
@@ -42,7 +43,7 @@ export default function BOProductsPage() {
     }).finally(() => setLoading(false));
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [showInactive]);
 
   // Filtrar por búsqueda
   const filtered = products.filter((p) => {
@@ -55,8 +56,8 @@ export default function BOProductsPage() {
   });
 
   // Paginación
-  const totalPages  = Math.ceil(filtered.length / PAGE_SIZE);
-  const paginated   = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   // Reset página al buscar
   useEffect(() => { setPage(1); }, [search]);
@@ -136,7 +137,7 @@ export default function BOProductsPage() {
         </button>
       </div>
 
-      {/* Buscador */}
+      {/* Buscador + filtro inactivos */}
       <div className="flex items-center gap-4">
         <div className="relative flex-1 max-w-md">
           <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-dark-500" />
@@ -154,6 +155,15 @@ export default function BOProductsPage() {
             </button>
           )}
         </div>
+        <button
+          onClick={() => setShowInactive(!showInactive)}
+          className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-all ${
+            showInactive
+              ? 'bg-brand-500/10 border-brand-500/30 text-brand-400'
+              : 'bg-dark-800 border-dark-600 text-dark-400 hover:text-white'
+          }`}>
+          {showInactive ? '👁 Mostrando todos' : '👁 Ver inactivos'}
+        </button>
         <p className="text-dark-500 text-sm">
           {filtered.length} producto{filtered.length !== 1 ? 's' : ''}
         </p>
@@ -184,7 +194,10 @@ export default function BOProductsPage() {
                 </td>
               </tr>
             ) : paginated.map((p) => (
-              <tr key={p.id} className="hover:bg-dark-700/50 transition-colors">
+              <tr key={p.id}
+                className={`hover:bg-dark-700/50 transition-colors ${
+                  !(p as any).isActive ? 'opacity-50' : ''
+                }`}>
                 {/* Miniatura */}
                 <td className="px-3 py-3">
                   <div className="w-10 h-10 rounded-lg overflow-hidden bg-dark-700

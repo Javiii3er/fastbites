@@ -67,7 +67,7 @@ export const orderApi = {
 
 // ─── Offers ───────────────────────────────────────────────────────────────────
 export const offerApi = {
-  getAll: () => api.get<ApiResponse<Offer[]>>('/offers'),
+  getAll: (params?: any) => api.get<ApiResponse<Offer[]>>('/offers', { params }),
 
   create: (data: Partial<Offer>) =>
     api.post<ApiResponse<Offer>>('/offers', data),
@@ -92,6 +92,8 @@ export const reportApi = {
   salesByDay:     () => api.get('/reports/sales/by-day'),
   salesByDayPart: () => api.get('/reports/sales/by-daypart'),
   salesByHour:    () => api.get('/reports/sales/by-hour'),
+  topProducts:    () => api.get('/reports/top-products'),
+  summary:        () => api.get('/reports/summary'),
 };
 
 // ─── Users ────────────────────────────────────────────────────────────────────

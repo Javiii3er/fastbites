@@ -5,11 +5,15 @@ import { authenticate, authorize } from '../auth/auth.middleware';
 
 const router = Router();
 
-// Públicas — solo ofertas activas y vigentes
+// Públicas — solo ofertas activas y vigentes (para el cliente)
 router.get('/', async (_req, res, next) => {
   try {
+    const showAll = _req.query.showAll === 'true';
+
     const offers = await prisma.offer.findMany({
-      where: { isActive: true, endsAt: { gte: new Date() } },
+      where: showAll
+        ? {}
+        : { isActive: true, endsAt: { gte: new Date() } },
       orderBy: { startsAt: 'asc' },
     });
     sendSuccess(res, offers);

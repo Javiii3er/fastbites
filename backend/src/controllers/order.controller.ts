@@ -170,18 +170,41 @@ export const updateOrderStatus = async (req: Request, res: Response, next: NextF
 export const salesByDay = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const sales = await prisma.$queryRaw`
-      SELECT DATE(createdAt) as date, COUNT(*) as orders, SUM(total) as revenue
-      FROM orders
-      WHERE status != 'CANCELLED'
-      GROUP BY DATE(createdAt)
+      SELECT DATE(o.createdAt) as date, COUNT(*) as orders, SUM(o.total) as revenue
+      FROM orders o
+      WHERE o.status != 'CANCELLED'
+      GROUP BY DATE(o.createdAt)
       ORDER BY date DESC
       LIMIT 30
     `;
-    const serialized = (sales as any[]).map((row) => ({
-      date:    row.date,
-      orders:  Number(row.orders),
-      revenue: Number(row.revenue),
-    }));
+
+    const details = await prisma.order.findMany({
+      where: { status: { not: 'CANCELLED' } },
+      include: {
+        user: { select: { name: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 100,
+    });
+
+    const serialized = (sales as any[]).map((row) => {
+      const dateStr = new Date(row.date).toISOString().split('T')[0];
+      const dayOrders = details
+        .filter((o) => new Date(o.createdAt).toISOString().split('T')[0] === dateStr)
+        .map((o) => ({
+          orderId:    o.id,
+          client:     o.user.name,
+          total:      Number(o.total),
+          status:     o.status,
+          payment:    o.paymentMethod,
+        }));
+      return {
+        date:    dateStr,
+        orders:  Number(row.orders),
+        revenue: Number(row.revenue),
+        detail:  dayOrders,
+      };
+    });
     sendSuccess(res, serialized);
   } catch (err) {
     next(err);

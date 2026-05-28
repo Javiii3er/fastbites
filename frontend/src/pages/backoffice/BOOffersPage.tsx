@@ -17,15 +17,20 @@ const emptyForm: OfferForm = {
 };
 
 export default function BOOffersPage() {
-  const [offers, setOffers]       = useState<any[]>([]);
-  const [showModal, setShowModal] = useState(false);
-  const [editing, setEditing]     = useState<any | null>(null);
-  const [form, setForm]           = useState<OfferForm>(emptyForm);
-  const [saving, setSaving]       = useState(false);
-  const [error, setError]         = useState('');
+  const [offers, setOffers]             = useState<any[]>([]);
+  const [showModal, setShowModal]       = useState(false);
+  const [editing, setEditing]           = useState<any | null>(null);
+  const [form, setForm]                 = useState<OfferForm>(emptyForm);
+  const [saving, setSaving]             = useState(false);
+  const [error, setError]               = useState('');
+  const [showInactive, setShowInactive] = useState(false);
 
-  const load = () => offerApi.getAll().then((r) => setOffers(r.data.data));
-  useEffect(() => { load(); }, []);
+  const load = (all = false) => {
+    offerApi.getAll(all ? { showAll: 'true' } : undefined)
+      .then((r) => setOffers(r.data.data));
+  };
+
+  useEffect(() => { load(showInactive); }, [showInactive]);
 
   const openCreate = () => {
     setEditing(null);
@@ -71,7 +76,7 @@ export default function BOOffersPage() {
         await offerApi.create(data);
       }
       setShowModal(false);
-      load();
+      load(showInactive);
     } catch (err: any) {
       setError(err.response?.data?.message ?? 'Error al guardar');
     } finally {
@@ -87,12 +92,25 @@ export default function BOOffersPage() {
           <p className="text-brand-500 text-sm font-semibold uppercase tracking-widest mb-1">
             Backoffice
           </p>
-          <h1 className="font-display text-3xl text-white tracking-wide">ADMINISTRAR OFERTAS</h1>
+          <h1 className="font-display text-3xl text-white tracking-wide">
+            ADMINISTRAR OFERTAS
+          </h1>
         </div>
-        <button onClick={openCreate} className="btn-primary flex items-center gap-2">
-          <Plus size={18} />
-          Nueva oferta
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowInactive(!showInactive)}
+            className={`text-xs font-medium px-3 py-1.5 rounded-lg border transition-all ${
+              showInactive
+                ? 'bg-brand-500/10 border-brand-500/30 text-brand-400'
+                : 'bg-dark-800 border-dark-600 text-dark-400 hover:text-white'
+            }`}>
+            {showInactive ? '👁 Mostrando todas' : '👁 Ver inactivas'}
+          </button>
+          <button onClick={openCreate} className="btn-primary flex items-center gap-2">
+            <Plus size={18} />
+            Nueva oferta
+          </button>
+        </div>
       </div>
 
       {/* Grid de ofertas */}
@@ -102,7 +120,8 @@ export default function BOOffersPage() {
             No hay ofertas aún
           </div>
         ) : offers.map((o) => (
-          <div key={o.id} className="card p-5">
+          <div key={o.id}
+            className={`card p-5 ${!o.isActive ? 'opacity-50' : ''}`}>
             <div className="flex justify-between items-start mb-3">
               <span className="badge-red font-bold px-3 py-1">-{o.discount}% OFF</span>
               <span className={o.isActive ? 'badge-green' : 'badge-gray'}>
@@ -130,9 +149,12 @@ export default function BOOffersPage() {
                 className="text-xs font-medium text-dark-400 hover:text-white transition-colors">
                 Editar
               </button>
-              <button onClick={async () => { await offerApi.toggle(o.id); load(); }}
+              <button
+                onClick={async () => { await offerApi.toggle(o.id); load(showInactive); }}
                 className={`text-xs font-semibold transition-colors ${
-                  o.isActive ? 'text-red-400 hover:text-red-300' : 'text-green-400 hover:text-green-300'
+                  o.isActive
+                    ? 'text-red-400 hover:text-red-300'
+                    : 'text-green-400 hover:text-green-300'
                 }`}>
                 {o.isActive ? 'Desactivar' : 'Activar'}
               </button>
@@ -196,7 +218,6 @@ export default function BOOffersPage() {
                     onChange={(e) => setForm({ ...form, discount: e.target.value })}
                     placeholder="Ej: 20" className="input" min="1" max="100" />
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium text-dark-300 mb-1.5">
                     Código (opcional)
@@ -216,7 +237,6 @@ export default function BOOffersPage() {
                     onChange={(e) => setForm({ ...form, startsAt: e.target.value })}
                     className="input" />
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium text-dark-300 mb-1.5">
                     Fecha fin *
