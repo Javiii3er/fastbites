@@ -55,15 +55,17 @@ export default function BOOrdersPage() {
 
   // Filtrar por búsqueda en el frontend
   const filteredOrders = orders.filter((o) => {
-    if (!search.trim()) return true;
-    const q = search.toLowerCase();
-    return (
-      String(o.id).includes(q) ||
-      o.user?.name?.toLowerCase().includes(q) ||
-      o.user?.email?.toLowerCase().includes(q) ||
-      o.restaurant?.name?.toLowerCase().includes(q)
-    );
-  });
+  if (!search.trim()) return true;
+  const q = search.toLowerCase().replace('#', '');
+  if (/^\d+$/.test(q)) {
+    return String(o.id) === q;
+  }
+  return (
+    o.user?.name?.toLowerCase().includes(q) ||
+    o.user?.email?.toLowerCase().includes(q) ||
+    o.restaurant?.name?.toLowerCase().includes(q)
+  );
+});
 
   return (
     <div className="space-y-6">
